@@ -30,16 +30,6 @@ export const RefreshStatusSchema = z.enum({
     Expired: 0,
 });
 
-// --- Frontend Redirect Page Schemas ---
-
-/**
- * Status codes for the /oauth/complete frontend page.
- */
-export const GStatusSchema = z.enum({
-    AuthenticationError: 0,
-    SessionGenerationError: 1,
-});
-
 /**
  * Status codes for the /register/complete frontend page.
  */
