@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
-export * from './Execution';
-
-// --- API Endpoint Schemas ---
+export const MRoomSchema = z.object({
+    id: z.int(),
+    created
+})
 
 export const LoginRequestSchema = z.object({
     name: z.string().max(45),
