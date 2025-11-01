@@ -9,7 +9,7 @@ export const PermissionSchema = z.enum({
     Authorization: 'Authorization',
     UseAccountSettings: 'UseAccountSettings',
     CreateRoom: 'CreateRoom',
-    WritePrompt: 'WriteComment',
+    WritePrompt: 'WritePrompt',
 
     // Creator
     KickUser: 'KickUser',
@@ -26,6 +26,7 @@ export type Permission = z.infer<typeof PermissionSchema>;
  * applicable permissions to the client.
  */
 export const RoleSchema = z.enum({
+    None: 'None',
     Standard: 'Standard',
     Creator: 'Creator',
     Admin: 'Admin',
@@ -37,7 +38,6 @@ export type Role = z.infer<typeof RoleSchema>;
  * It should be fetched from the backend after a user authenticates.
  */
 export const AuthContextSchema = z.object({
-    isAuthenticated: z.boolean(),
     userId: z.number().optional(),
     role: RoleSchema,
     permissions: z.array(PermissionSchema),
@@ -45,8 +45,9 @@ export const AuthContextSchema = z.object({
 export type AuthContext = z.infer<typeof AuthContextSchema>;
 
 
-// export const STANDARD_CONTEXT: AuthContext = {
-//     isAuthenticated: false,
-//     role: RoleSchema.enum.Standard,
-//     permissions: [],
-// };
+// We can define a default "Guest" context for when no user is logged in.
+export const NONE_CONTEXT: AuthContext = {
+    userId: undefined,
+    role: RoleSchema.enum.None,
+    permissions: [],
+};
