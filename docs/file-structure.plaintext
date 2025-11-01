@@ -3,4 +3,7 @@ codenight/
     lib/
         api/
         models/
+    components/
+        shared/
+        ui/
 
