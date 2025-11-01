@@ -2,10 +2,25 @@ import {fal, QueueStatus} from "@fal-ai/client";
 
 const endpoint = "fal-ai/recraft/v3/text-to-image";
 
-export function configurate(apiKey: string){
+export function configure(apiKey: string){
     fal.config({
         credentials: apiKey
     })
+}
+
+export async function checkApiKey(apiKey: string){
+    try{
+        configure(apiKey);
+        await fal.queue.status(endpoint, {
+            requestId: "jgnerkgnerk"
+        });
+    }
+    catch(e){
+        console.log(e.message);
+        return e.message !== "Unauthorized";
+    }
+
+    return true;
 }
 
 export async function queueImage(prompt: string){

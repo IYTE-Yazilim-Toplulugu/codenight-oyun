@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Represents a user profile.
  */
 export const MUserSchema = z.object({
-    id: z.number(),
+    id: z.uuidv4(),
     username: z.string(),
     api_key: z.string(),
     avatar: z.int(),
