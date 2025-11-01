@@ -4,7 +4,7 @@ import {MUser} from "@/lib/models/User";
 import supabase from "@/lib/api/supabase/supabase";
 import {checkApiKey} from "@/lib/util/fal";
 
-export default async function UserRegister(user: MUser){
+export default async function UserRegister(user: Omit<MUser, "is_admin" | "admin_pass" | "id">){
     const status = await checkApiKey(user.api_key);
     if (!status){
         return {
@@ -13,10 +13,7 @@ export default async function UserRegister(user: MUser){
         };
     }
 
-    const userToAdd = {
-        username: user.username,
-        api_key: user.api_key,
-        avatar: user.avatar,
+    const userToAdd = { ...user,
         is_admin: false
     };
 
