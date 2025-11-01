@@ -1,22 +1,24 @@
+'use server';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import Cookies from 'js-cookie';
+import { cookies } from 'next/headers';
+import supabase from './supabase/supabase';
 
 // Initialize Supabase clients
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY || '';
 
 // Regular client for frontend operations (respects RLS)
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+// export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 // Service client for backend operations (bypasses RLS)
-export const supabaseService: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+// export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+//     auth: {
+//         persistSession: false,
+//         autoRefreshToken: false,
+//     },
+// });
 
 // Supabase Auth wrapper functions that integrate with your existing authentication system
 
@@ -25,83 +27,81 @@ export const supabaseService: SupabaseClient = createClient(supabaseUrl, supabas
  * @param email User's email
  * @param password User's password
  */
-export const supabaseLogin = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    });
+export const supabaseLogin = async (username: string, apiKey: string) => {
+    const { error, data } = await supabase.from("users")
+        .select("id", {
+            count: "exact",
+            head: true
+        }).eq("username", username).eq("api_key", apiKey);
+
+
 
     if (error) {
-        throw new Error(`Supabase auth error: ${error.message}`);
-    }
-
-    // Store session data in cookies to integrate with existing auth system
-    if (data.session) {
-        Cookies.set('authToken', data.session.access_token, {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-        });
-
-        if (data.session.refresh_token) {
-            Cookies.set('refreshToken', data.session.refresh_token, {
-                path: '/',
-                maxAge: 60 * 60 * 24 * 30, // 30 days
-            });
+        return {
+            success: false,
+            message: error.message
         }
     }
 
-    return data;
+    const cks = await cookies();
+
+    cks.set('apiKey', apiKey);
+
+    return {
+        success: true,
+        message: "OK"
+    };
 };
 
-/**
- * Supabase signup function
- * @param email User's email
- * @param password User's password
- * @param userData Additional user data to store
- */
-export const supabaseSignUp = async (email: string, password: string, userData?: Record<string, any>) => {
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: userData,
-        },
-    });
-
-    if (error) {
-        throw new Error(`Supabase signup error: ${error.message}`);
-    }
-
-    // Store session data in cookies if user is automatically signed in
-    if (data.session) {
-        Cookies.set('authToken', data.session.access_token, {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-        });
-
-        if (data.session.refresh_token) {
-            Cookies.set('refreshToken', data.session.refresh_token, {
-                path: '/',
-                maxAge: 60 * 60 * 24 * 30, // 30 days
-            });
-        }
-    }
-
-    return data;
-};
+//
+// /**
+//  * Supabase signup function
+//  * @param email User's email
+//  * @param password User's password
+//  * @param userData Additional user data to store
+//  */
+// export const supabaseSignUp = async (email: string, password: string, userData?: Record<string, any>) => {
+//     const { data, error } = await supabase.auth.signUp({
+//         email,
+//         password,
+//         options: {
+//             data: userData,
+//         },
+//     });
+//
+//     if (error) {
+//         throw new Error(`Supabase signup error: ${error.message}`);
+//     }
+//
+//     // Store session data in cookies if user is automatically signed in
+//     if (data.session) {
+//         Cookies.set('authToken', data.session.access_token, {
+//             path: '/',
+//             maxAge: 60 * 60 * 24 * 30, // 30 days
+//         });
+//
+//         if (data.session.refresh_token) {
+//             Cookies.set('refreshToken', data.session.refresh_token, {
+//                 path: '/',
+//                 maxAge: 60 * 60 * 24 * 30, // 30 days
+//             });
+//         }
+//     }
+//
+//     return data;
+// };
 
 /**
  * Supabase logout function that clears cookies
  */
 export const supabaseLogout = async () => {
-    const { error } = await supabase.auth.signOut();
 
     // Clear cookies to integrate with existing auth system
-    Cookies.remove('authToken', { path: '/' });
-    Cookies.remove('refreshToken', { path: '/' });
+    const data = (await cookies()).delete("apiKey");
 
-    if (error) {
-        throw new Error(`Supabase logout error: ${error.message}`);
+    if (!data) {
+        console.error(`Supabase logout error: No cookie found to delete.`);
+        return { success: false };
     }
 
     return { success: true };
@@ -120,41 +120,6 @@ export const getSupabaseUser = async () => {
     return user;
 };
 
-/**
- * Refresh Supabase session using refresh token from cookies
- */
-export const refreshSupabaseSession = async () => {
-    const refreshToken = Cookies.get('refreshToken');
-
-    if (!refreshToken) {
-        throw new Error('No refresh token found');
-    }
-
-    const { data, error } = await supabase.auth.refreshSession({
-        refresh_token: refreshToken,
-    });
-
-    if (error) {
-        throw new Error(`Supabase refresh session error: ${error.message}`);
-    }
-
-    // Update cookies with new tokens
-    if (data.session) {
-        Cookies.set('authToken', data.session.access_token, {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-        });
-
-        if (data.session.refresh_token) {
-            Cookies.set('refreshToken', data.session.refresh_token, {
-                path: '/',
-                maxAge: 60 * 60 * 24 * 30, // 30 days
-            });
-        }
-    }
-
-    return data;
-};
 
 // Supabase-specific wrapper functions that integrate with your existing API structure
 
@@ -169,7 +134,7 @@ export const supabaseFetcher = async <T extends z.ZodTypeAny>(
     schema: T,
     filters?: Record<string, any>
 ): Promise<MutatorResponse<z.infer<T>[]>> => {
-    let query = supabaseService.from(from).select('*');
+    let query = supabase.from(from).select('*');
 
     // Apply filters if provided
     if (filters) {
@@ -224,7 +189,7 @@ export const supabaseFetcherSingle = async <T extends z.ZodTypeAny>(
     schema: T,
     filters: Record<string, any>
 ): Promise<MutatorResponse<z.infer<T> | null>> => {
-    let query = supabaseService.from(from).select('*');
+    let query = supabase.from(from).select('*');
 
     // Apply filters
     Object.entries(filters).forEach(([key, value]) => {
@@ -288,7 +253,7 @@ export const supabaseInsert = async <T extends z.ZodTypeAny>(
     schema: T,
     data: any
 ): Promise<MutatorResponse<z.infer<T>>> => {
-    const { data: responseData, error } = await supabaseService
+    const { data: responseData, error } = await supabase
         .from(from)
         .insert(data)
         .select()
@@ -342,7 +307,7 @@ export const supabaseUpdate = async <T extends z.ZodTypeAny>(
     filters: Record<string, any>,
     data: any
 ): Promise<MutatorResponse<z.infer<T>>> => {
-    let query = supabaseService.from(from).update(data).select().single();
+    let query = supabase.from(from).update(data).select().single();
 
     // Apply filters
     Object.entries(filters).forEach(([key, value]) => {
@@ -395,7 +360,7 @@ export const supabaseDelete = async (
     from: string,
     filters: Record<string, any>
 ): Promise<MutatorResponse<boolean>> => {
-    let query = supabaseService.from(from).delete();
+    let query = supabase.from(from).delete();
 
     // Apply filters
     Object.entries(filters).forEach(([key, value]) => {
