@@ -1,25 +1,26 @@
 "use server"
 
-import {MRoom} from "@/lib/models/Room";
-import {getUserIdFromCookie} from "@/lib/util/auth";
+import { MRoom, RoomCreatePayload, RoomCreatePayloadSchema } from "@/lib/models/Room";
+import { getUserIdFromCookie } from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
-import {randomInt} from "node:crypto";
+import { randomInt } from "node:crypto";
+import { supabaseInsert } from "@/lib/api/supabase";
 
 const POSSIBLE_KEY_CHARS = "ABCDEFGHIJKLMNPRSTUVYZQWX23456789";
 const KEY_LENGTH = 8;
 
-function generateCode(){
+function generateCode() {
     let code = "";
-    
-    for (let i = 0; i < KEY_LENGTH; i++){
+
+    for (let i = 0; i < KEY_LENGTH; i++) {
         const char = POSSIBLE_KEY_CHARS[randomInt(POSSIBLE_KEY_CHARS.length)];
         code += char;
     }
-    
+
     return code;
 }
 
-export default async function CreateRoom(room: Omit<MRoom, "id" | "create_date" | "current_round" | "creator_id" | "round_ends_at" | "short_code">){
+export default async function CreateRoom(room: Omit<MRoom, "id" | "created_at" | "current_round" | "creator_id" | "round_ends_at" | "short_code">) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -29,20 +30,19 @@ export default async function CreateRoom(room: Omit<MRoom, "id" | "create_date" 
             roomCode: null
         };
 
-    const roomToAdd = {...room,
+    const roomCreatePayload: RoomCreatePayload = {
+        ...room,
         creator_id: userId,
         short_code: generateCode(),
-        created_at: new Date()
+        created_at: new Date().toISOString()
     };
-    
 
-    const { error } = await supabase
-        .from("rooms")
-        .insert(roomToAdd);
+
+    const { data, error } = await supabaseInsert('rooms', RoomCreatePayloadSchema, roomCreatePayload);
 
     return {
         success: !error,
-        message: error ? error.message : "OK",
-        roomCode: error ? null : roomToAdd.short_code
+        message: data ? "OK" : error?.message,
+        roomCode: data ? roomCreatePayload.short_code : null
     };
 }

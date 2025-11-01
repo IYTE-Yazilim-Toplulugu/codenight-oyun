@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const MRoundEntrySchema = z.object({
     id: z.uuid(),
-    round_id: z.uuid(),
+    round_id: z.int(),
     author_id: z.uuid(),
     room_id: z.uuid(),
     is_prompt: z.boolean(),

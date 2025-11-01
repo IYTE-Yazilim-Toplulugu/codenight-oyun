@@ -2,11 +2,21 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import Cookies from 'js-cookie';
 
-// Initialize Supabase client
+// Initialize Supabase clients
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
 
+// Regular client for frontend operations (respects RLS)
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Service client for backend operations (bypasses RLS)
+export const supabaseService: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
 // Supabase Auth wrapper functions that integrate with your existing authentication system
 
@@ -16,31 +26,31 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
  * @param password User's password
  */
 export const supabaseLogin = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    throw new Error(`Supabase auth error: ${error.message}`);
-  }
-
-  // Store session data in cookies to integrate with existing auth system
-  if (data.session) {
-    Cookies.set('authToken', data.session.access_token, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
     });
 
-    if (data.session.refresh_token) {
-      Cookies.set('refreshToken', data.session.refresh_token, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-      });
+    if (error) {
+        throw new Error(`Supabase auth error: ${error.message}`);
     }
-  }
 
-  return data;
+    // Store session data in cookies to integrate with existing auth system
+    if (data.session) {
+        Cookies.set('authToken', data.session.access_token, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30, // 30 days
+        });
+
+        if (data.session.refresh_token) {
+            Cookies.set('refreshToken', data.session.refresh_token, {
+                path: '/',
+                maxAge: 60 * 60 * 24 * 30, // 30 days
+            });
+        }
+    }
+
+    return data;
 };
 
 /**
@@ -50,100 +60,100 @@ export const supabaseLogin = async (email: string, password: string) => {
  * @param userData Additional user data to store
  */
 export const supabaseSignUp = async (email: string, password: string, userData?: Record<string, any>) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: userData,
-    },
-  });
-
-  if (error) {
-    throw new Error(`Supabase signup error: ${error.message}`);
-  }
-
-  // Store session data in cookies if user is automatically signed in
-  if (data.session) {
-    Cookies.set('authToken', data.session.access_token, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: userData,
+        },
     });
 
-    if (data.session.refresh_token) {
-      Cookies.set('refreshToken', data.session.refresh_token, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-      });
+    if (error) {
+        throw new Error(`Supabase signup error: ${error.message}`);
     }
-  }
 
-  return data;
+    // Store session data in cookies if user is automatically signed in
+    if (data.session) {
+        Cookies.set('authToken', data.session.access_token, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30, // 30 days
+        });
+
+        if (data.session.refresh_token) {
+            Cookies.set('refreshToken', data.session.refresh_token, {
+                path: '/',
+                maxAge: 60 * 60 * 24 * 30, // 30 days
+            });
+        }
+    }
+
+    return data;
 };
 
 /**
  * Supabase logout function that clears cookies
  */
 export const supabaseLogout = async () => {
-  const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
 
-  // Clear cookies to integrate with existing auth system
-  Cookies.remove('authToken', { path: '/' });
-  Cookies.remove('refreshToken', { path: '/' });
+    // Clear cookies to integrate with existing auth system
+    Cookies.remove('authToken', { path: '/' });
+    Cookies.remove('refreshToken', { path: '/' });
 
-  if (error) {
-    throw new Error(`Supabase logout error: ${error.message}`);
-  }
+    if (error) {
+        throw new Error(`Supabase logout error: ${error.message}`);
+    }
 
-  return { success: true };
+    return { success: true };
 };
 
 /**
  * Get current Supabase user
  */
 export const getSupabaseUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error) {
-    throw new Error(`Supabase get user error: ${error.message}`);
-  }
+    if (error) {
+        throw new Error(`Supabase get user error: ${error.message}`);
+    }
 
-  return user;
+    return user;
 };
 
 /**
  * Refresh Supabase session using refresh token from cookies
  */
 export const refreshSupabaseSession = async () => {
-  const refreshToken = Cookies.get('refreshToken');
+    const refreshToken = Cookies.get('refreshToken');
 
-  if (!refreshToken) {
-    throw new Error('No refresh token found');
-  }
+    if (!refreshToken) {
+        throw new Error('No refresh token found');
+    }
 
-  const { data, error } = await supabase.auth.refreshSession({
-    refresh_token: refreshToken,
-  });
-
-  if (error) {
-    throw new Error(`Supabase refresh session error: ${error.message}`);
-  }
-
-  // Update cookies with new tokens
-  if (data.session) {
-    Cookies.set('authToken', data.session.access_token, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+    const { data, error } = await supabase.auth.refreshSession({
+        refresh_token: refreshToken,
     });
 
-    if (data.session.refresh_token) {
-      Cookies.set('refreshToken', data.session.refresh_token, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-      });
+    if (error) {
+        throw new Error(`Supabase refresh session error: ${error.message}`);
     }
-  }
 
-  return data;
+    // Update cookies with new tokens
+    if (data.session) {
+        Cookies.set('authToken', data.session.access_token, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30, // 30 days
+        });
+
+        if (data.session.refresh_token) {
+            Cookies.set('refreshToken', data.session.refresh_token, {
+                path: '/',
+                maxAge: 60 * 60 * 24 * 30, // 30 days
+            });
+        }
+    }
+
+    return data;
 };
 
 // Supabase-specific wrapper functions that integrate with your existing API structure
@@ -155,31 +165,52 @@ export const refreshSupabaseSession = async () => {
  * @param filters Optional filters to apply to the query
  */
 export const supabaseFetcher = async <T extends z.ZodTypeAny>(
-  from: string,
-  schema: T,
-  filters?: Record<string, any>
-): Promise<z.infer<T>[]> => {
-  let query = supabase.from(from).select('*');
+    from: string,
+    schema: T,
+    filters?: Record<string, any>
+): Promise<MutatorResponse<z.infer<T>[]>> => {
+    let query = supabaseService.from(from).select('*');
 
-  // Apply filters if provided
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      query = query.eq(key, value);
-    });
-  }
+    // Apply filters if provided
+    if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+            query = query.eq(key, value);
+        });
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error) {
-    throw new Error(`Supabase error: ${error.message}`);
-  }
+    // Handle Supabase error first
+    if (error) {
+        return {
+            data: null,
+            error: new Error(`Supabase error: ${error.message}`)
+        };
+    }
 
-  // Validate each item in the response against the schema
-  if (data) {
-    return data.map(item => schema.parse(item)) as z.infer<T>[];
-  }
+    // Validate each item in the response against the schema
+    try {
+        if (data) {
+            const parsedData = data.map(item => schema.parse(item)) as z.infer<T>[];
+            return {
+                data: parsedData,
+                error: null
+            };
+        }
 
-  return [];
+        return {
+            data: [],
+            error: null
+        };
+    } catch (validationError) {
+        // Catch Zod validation errors
+        return {
+            data: null,
+            error: validationError instanceof Error
+                ? validationError
+                : new Error(`Zod validation failed: ${String(validationError)}`)
+        };
+    }
 };
 
 /**
@@ -189,56 +220,113 @@ export const supabaseFetcher = async <T extends z.ZodTypeAny>(
  * @param filters Filters to apply to the query (should result in a single record)
  */
 export const supabaseFetcherSingle = async <T extends z.ZodTypeAny>(
-  from: string,
-  schema: T,
-  filters: Record<string, any>
-): Promise<z.infer<T> | null> => {
-  let query = supabase.from(from).select('*');
+    from: string,
+    schema: T,
+    filters: Record<string, any>
+): Promise<MutatorResponse<z.infer<T> | null>> => {
+    let query = supabaseService.from(from).select('*');
 
-  // Apply filters
-  Object.entries(filters).forEach(([key, value]) => {
-    query = query.eq(key, value);
-  });
+    // Apply filters
+    Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+    });
 
-  const { data, error } = await query.single();
+    const { data, error } = await query.single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      return null;
+    if (error) {
+        if (error.code === 'PGRST116') {
+            // No rows returned
+            return {
+                data: null,
+                error: null
+            };
+        }
+        return {
+            data: null,
+            error: new Error(`Supabase error: ${error.message}`)
+        };
     }
-    throw new Error(`Supabase error: ${error.message}`);
-  }
 
-  if (data) {
-    return schema.parse(data) as z.infer<T>;
-  }
+    // Validate the response against the schema
+    try {
+        if (data) {
+            const parsedData = schema.parse(data) as z.infer<T>;
+            return {
+                data: parsedData,
+                error: null
+            };
+        }
 
-  return null;
+        return {
+            data: null,
+            error: null
+        };
+    } catch (validationError) {
+        // Catch Zod validation errors
+        return {
+            data: null,
+            error: validationError instanceof Error
+                ? validationError
+                : new Error(`Zod validation failed: ${String(validationError)}`)
+        };
+    }
+};
+
+export type MutatorResponse<T> = {
+    data: T | null;
+    error: Error | null;
 };
 
 /**
  * Supabase mutator for INSERT operations
  * @param from The table name to insert into
- * @param schema The Zod schema for the expected response
+ * @param schema The Zod schema for the *expected response*
  * @param data The data to insert
  */
 export const supabaseInsert = async <T extends z.ZodTypeAny>(
-  from: string,
-  schema: T,
-  data: any
-): Promise<z.infer<T>> => {
-  const { data: responseData, error } = await supabase.from(from).insert(data).select().single();
+    from: string,
+    schema: T,
+    data: any
+): Promise<MutatorResponse<z.infer<T>>> => {
+    const { data: responseData, error } = await supabaseService
+        .from(from)
+        .insert(data)
+        .select()
+        .single();
 
-  if (error) {
-    throw new Error(`Supabase error: ${error.message}`);
-  }
+    // Handle Supabase error first
+    if (error) {
+        return {
+            data: null,
+            error: new Error(`Supabase error: ${error.message}`)
+        };
+    }
 
-  if (responseData) {
-    return schema.parse(responseData) as z.infer<T>;
-  }
+    // Handle case where Supabase returns no data (e.g., RLS)
+    if (!responseData) {
+        return {
+            data: null,
+            error: new Error('Supabase error: No data returned after insert.')
+        };
+    }
 
-  throw new Error('No data returned from insert operation');
+    // Try to parse the data
+    try {
+        // Zod parse will validate the shape of responseData
+        const parsedData = schema.parse(responseData);
+        return {
+            data: parsedData,
+            error: null
+        };
+    } catch (validationError) {
+        // Catch Zod validation errors
+        return {
+            data: null,
+            error: validationError instanceof Error
+                ? validationError
+                : new Error(`Zod validation failed: ${String(validationError)}`)
+        };
+    }
 };
 
 /**
@@ -249,29 +337,53 @@ export const supabaseInsert = async <T extends z.ZodTypeAny>(
  * @param data The data to update
  */
 export const supabaseUpdate = async <T extends z.ZodTypeAny>(
-  from: string,
-  schema: T,
-  filters: Record<string, any>,
-  data: any
-): Promise<z.infer<T>> => {
-  let query = supabase.from(from).update(data).select().single();
+    from: string,
+    schema: T,
+    filters: Record<string, any>,
+    data: any
+): Promise<MutatorResponse<z.infer<T>>> => {
+    let query = supabaseService.from(from).update(data).select().single();
 
-  // Apply filters
-  Object.entries(filters).forEach(([key, value]) => {
-    query = query.eq(key, value);
-  });
+    // Apply filters
+    Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+    });
 
-  const { data: responseData, error } = await query;
+    const { data: responseData, error } = await query;
 
-  if (error) {
-    throw new Error(`Supabase error: ${error.message}`);
-  }
+    // Handle Supabase error first
+    if (error) {
+        return {
+            data: null,
+            error: new Error(`Supabase error: ${error.message}`)
+        };
+    }
 
-  if (responseData) {
-    return schema.parse(responseData) as z.infer<T>;
-  }
+    // Handle case where Supabase returns no data
+    if (!responseData) {
+        return {
+            data: null,
+            error: new Error('Supabase error: No data returned from update operation')
+        };
+    }
 
-  throw new Error('No data returned from update operation');
+    // Try to parse the data
+    try {
+        // Zod parse will validate the shape of responseData
+        const parsedData = schema.parse(responseData);
+        return {
+            data: parsedData,
+            error: null
+        };
+    } catch (validationError) {
+        // Catch Zod validation errors
+        return {
+            data: null,
+            error: validationError instanceof Error
+                ? validationError
+                : new Error(`Zod validation failed: ${String(validationError)}`)
+        };
+    }
 };
 
 /**
@@ -280,22 +392,28 @@ export const supabaseUpdate = async <T extends z.ZodTypeAny>(
  * @param filters Filters to identify which records to delete
  */
 export const supabaseDelete = async (
-  from: string,
-  filters: Record<string, any>
-): Promise<boolean> => {
-  let query = supabase.from(from).delete();
+    from: string,
+    filters: Record<string, any>
+): Promise<MutatorResponse<boolean>> => {
+    let query = supabaseService.from(from).delete();
 
-  // Apply filters
-  Object.entries(filters).forEach(([key, value]) => {
-    query = query.eq(key, value);
-  });
+    // Apply filters
+    Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+    });
 
-  const { error } = await query;
+    const { error } = await query;
 
-  if (error) {
-    throw new Error(`Supabase error: ${error.message}`);
-  }
+    if (error) {
+        return {
+            data: null,
+            error: new Error(`Supabase error: ${error.message}`)
+        };
+    }
 
-  return true;
+    return {
+        data: true,
+        error: null
+    };
 };
 
