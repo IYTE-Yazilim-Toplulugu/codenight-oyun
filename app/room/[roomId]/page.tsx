@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+
+import { Loader2 } from "lucide-react"
+
 import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { ResultBook } from "@/components/ResultBook"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2 } from "lucide-react"
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -16,14 +19,18 @@ interface Player {
     status: "done" | "active" | "waiting"
 }
 
-export default function GameRoomPage({
-    params,
-}: {
-    params: { roomId: string }
-}) {
+type RoomPageProps = {
+    params: {
+        roomId: string; // This 'roomId' must match the folder name [roomId]
+    }
+};
+
+export default function GameRoomPage({ params }: RoomPageProps) {
     const [gameState, setGameState] = useState<GameState>("WAITING")
     const [guess, setGuess] = useState("")
     const [timeRemaining, setTimeRemaining] = useState(45)
+    const { roomId } = useParams()
+
 
     // Mock data for demonstration
     const players: Player[] = [
@@ -96,7 +103,7 @@ export default function GameRoomPage({
     return (
         <div className="min-h-screen flex flex-col bg-background">
             {/* Header Area */}
-            <GameHeader roomCode={params.roomId} currentRound={1} totalRounds={8} timeRemaining={timeRemaining} />
+            <GameHeader roomCode={roomId as string} currentRound={1} totalRounds={8} timeRemaining={timeRemaining} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex gap-6 p-6 max-w-7xl mx-auto w-full">
