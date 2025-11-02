@@ -45,7 +45,8 @@ export default async function RoundRoom(roomCode: string) {
     if (error){
         return {
             success: false,
-            message: error.message
+            message: error.message,
+            isDone: false
         };
     }
 
