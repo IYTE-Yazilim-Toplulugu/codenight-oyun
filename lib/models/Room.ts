@@ -30,9 +30,14 @@ export const RoomCreatePayloadSchema = MRoomSchema.omit({
     created_at: true,
 })
 
+export const RoomGetPayloadSchema = MRoomSchema.pick({
+    id: true,
+})
+
 
 // --- Type Exports ---
 export type RoomCode = z.infer<typeof RoomCodeSchema>;
 export type MRoom = z.infer<typeof MRoomSchema>;
 export type RoomJoinPayload = z.infer<typeof RoomJoinPayloadSchema>;
 export type RoomCreatePayload = z.infer<typeof RoomCreatePayloadSchema>;
+export type RoomGetPayload = z.infer<typeof RoomGetPayloadSchema>;

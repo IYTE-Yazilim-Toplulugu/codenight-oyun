@@ -1,5 +1,4 @@
 "use server"
-
 import { MRoomSchema, RoomCode, RoomJoinPayload } from "@/lib/models/Room";
 import { getUserIdFromCookie } from "@/lib/util/auth";
 import { supabaseFetcherSingle, supabaseUpdate } from "@/lib/api/supabase";
@@ -27,7 +26,7 @@ export default async function JoinRoom(roomCode: RoomCode) {
 
     if (data) {
         let oldData = data;
-        if (data.player_count >= ROOM_MAX_PLAYERS) {
+        if (data.player_count <= ROOM_MAX_PLAYERS) {
 
             const { success, message } = await CreatePlayer(oldData.player_count + 1, oldData.id);
 
@@ -38,7 +37,7 @@ export default async function JoinRoom(roomCode: RoomCode) {
                     { ...oldData, player_count: oldData.player_count + 1 }
                 );
 
-        // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
                 return {
                     success: data != null && success,
                     message: data != null && success ? "OK" : error?.message,

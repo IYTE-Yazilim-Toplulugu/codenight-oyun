@@ -11,7 +11,8 @@ export default async function UserRegister(user: Omit<MUser, "is_admin" | "admin
     if (!status) {
         return {
             message: "API Key was wrong.",
-            success: false
+            success: false,
+            user: null
         };
     }
 
@@ -21,18 +22,18 @@ export default async function UserRegister(user: Omit<MUser, "is_admin" | "admin
         is_admin: false
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from("users")
-        .insert(userToAdd);
+        .insert(userToAdd)
+        .select();
 
     if (error?.code == "23505") {
         return LoginUser(user.username, user.api_key);
     }
 
-    console.error("User registration error:", error);
-
     return {
         success: !error,
-        message: error ? error.message : "OK"
+        message: error ? error.message : "OK",
+        user: data ? data[0] : null
     };
 }

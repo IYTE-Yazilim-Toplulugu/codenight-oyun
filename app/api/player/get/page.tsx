@@ -1,7 +1,7 @@
 "use server"
 import { getUserIdFromCookie } from "@/lib/util/auth";
-import { MPlayerSchema, PlayerGetPayload } from "@/lib/models/Player";
-import { supabaseFetcher } from "@/lib/api/supabase";
+import { MPlayerSchema, PlayerGetPayload, PlayersGetPayload } from "@/lib/models/Player";
+import { supabaseFetcher, supabaseFetcherSingle } from "@/lib/api/supabase";
 import { MRoom } from "@/lib/models/Room";
 
 /**
@@ -9,7 +9,7 @@ import { MRoom } from "@/lib/models/Room";
  *
  * @return An object indicating success status, message, and the player data if successful.
  */
-export default async function GetPlayers(room: Pick<MRoom, 'id'>) {
+export async function GetPlayers(room: Pick<MRoom, 'id'>) {
 
     const userId = await getUserIdFromCookie();
 
@@ -20,15 +20,45 @@ export default async function GetPlayers(room: Pick<MRoom, 'id'>) {
             roomCode: null
         };
 
-    const playerGetPayload: PlayerGetPayload = {
+    const playersGetPayload: PlayersGetPayload = {
         room_id: room.id,
     }
 
-    const { data, error } = await supabaseFetcher('players', MPlayerSchema.array(), playerGetPayload);
+    const { data, error } = await supabaseFetcher('players', MPlayerSchema.array(), playersGetPayload);
 
     return {
         success: !error,
         message: data ? "OK" : error?.message,
         players: data ? data : null,
     };
+}
+
+/**
+ * Retrieves the player associated with the current user.
+ *
+ * @return An object indicating success status, message, and the player data if successful.
+ */
+export async function GetPlayer() {
+
+    const userId = await getUserIdFromCookie();
+
+    if (!userId) {
+        return {
+            success: false,
+            message: "Forbidden",
+            player: null
+        }
+    }
+
+    const playerGetPayload: PlayerGetPayload = {
+        user_id: userId
+    }
+
+    const { data, error } = await supabaseFetcherSingle('players', MPlayerSchema, playerGetPayload);
+
+    return {
+        success: !error,
+        message: data ? "OK" : error?.message,
+        player: data ? data : null,
+    }
 }

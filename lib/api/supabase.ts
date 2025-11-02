@@ -27,7 +27,7 @@ const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY || '';
  * @param password User's password
  */
 export const supabaseLogin = async (username: string, apiKey: string) => {
-    const { error } = await supabase.from("users")
+    const { data, error } = await supabase.from("users")
         .select("id", {
             count: "exact",
             head: true
@@ -38,17 +38,20 @@ export const supabaseLogin = async (username: string, apiKey: string) => {
     if (error) {
         return {
             success: false,
-            message: error.message
+            message: error.message,
+            user: null
         }
     }
 
     const cks = await cookies();
 
     cks.set('apiKey', apiKey);
+    cks.set('username', data?.length ? data[0].id : '');
 
     return {
         success: true,
-        message: "OK"
+        message: "OK",
+        user: data?.length ? data[0].id : null
     };
 };
 

@@ -14,6 +14,8 @@ import { MRoom, RoomCode, RoomCodeSchema } from "@/lib/models/Room"
 import CreateRoom from "@/app/api/room/create/page"
 import { useToast } from "@/lib/hooks/toastHooks"
 import JoinRoom from "../api/room/join/page"
+import { GetPlayer } from "../api/player/get/page"
+import GetRoom from "../api/room/get/page"
 
 export default function JoinRoomPage() {
     const router = useRouter()
@@ -32,18 +34,28 @@ export default function JoinRoomPage() {
     const { toast } = useToast()
 
     useEffect(() => {
-        // Check if user is logged in
-        const name = Cookie.get("username")
-        const apiKey = Cookie.get("apiKey")
+        const checkUserLoggedIn = async () => {
+            // Check if user is logged in
+            const name = Cookie.get("username")
+            const apiKey = Cookie.get("apiKey")
 
-        if (!name || !apiKey) {
-            router.push("/")
-            return
+            if (!name || !apiKey) {
+                router.push("/")
+                return
+            }
+
+            const { room } = await GetRoom()
+
+            if (room) {
+                router.push(`/room/${room.short_code}`)
+            }
+
+            setPlayerName(name)
+            setIsLoading(false)
         }
 
-        setPlayerName(name)
-        setIsLoading(false)
 
+        checkUserLoggedIn()
     }, [router])
 
     const handleRoomCodeChange = (value: string) => {
@@ -113,8 +125,6 @@ export default function JoinRoomPage() {
         // Generate a random room code
         const { success, message, roomCode } = await CreateRoom(room)
 
-        console.log({ success, message, roomCode })
-
         if (success && roomCode) {
             router.push(`/room/${roomCode}`)
         }
@@ -154,7 +164,6 @@ export default function JoinRoomPage() {
 
                             const formData = new FormData(e.target as HTMLFormElement);
                             const roomCode = formData.get('roomCode') as string;
-                            console.log({ roomCode });
 
                             handleJoinRoom({ short_code: roomCode } as MRoom);
                         }}

@@ -12,8 +12,12 @@ export const PlayerDeletePayloadSchema = MPlayerSchema.pick({
     user_id: true
 })
 
-export const PlayerGetPayloadSchema = MPlayerSchema.pick({
+export const PlayersGetPayloadSchema = MPlayerSchema.pick({
     room_id: true
+})
+
+export const PlayerGetPayloadSchema = MPlayerSchema.pick({
+    user_id: true
 })
 
 
@@ -21,4 +25,5 @@ export const PlayerGetPayloadSchema = MPlayerSchema.pick({
 export type MPlayer = z.infer<typeof MPlayerSchema>;
 export type PlayerCreatePayload = z.infer<typeof PlayerCreatePayloadSchema>;
 export type PlayerDeletePayload = z.infer<typeof PlayerDeletePayloadSchema>;
+export type PlayersGetPayload = z.infer<typeof PlayersGetPayloadSchema>;
 export type PlayerGetPayload = z.infer<typeof PlayerGetPayloadSchema>;

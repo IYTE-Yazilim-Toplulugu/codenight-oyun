@@ -30,10 +30,8 @@ export default function LoginPage() {
 
         const checkApiKeyAsync = async () => {
             const apiKey = Cookies.get("apiKey")
-            console.log("Stored API Key:", apiKey)
 
             const isValid = await checkApiKey(apiKey || "")
-            console.log("API Key valid:", isValid)
 
             if (isValid) {
                 router.push("/join")
@@ -50,12 +48,12 @@ export default function LoginPage() {
         e.preventDefault()
         setIsSubmitting(true)
 
-        const { success, message } = await UserRegister({ username: name, api_key: apiKey } as MUser)
+        const { user, success } = await UserRegister({ username: name, api_key: apiKey } as MUser)
 
         if (success) {
             // Store credentials in localStorage
-            Cookies.set("username", name)
-            Cookies.set("apiKey", apiKey)
+            Cookies.set("username", user.name)
+            Cookies.set("apiKey", user.apiKey)
 
             router.push("/join")
         } else {
@@ -113,7 +111,7 @@ export default function LoginPage() {
                                 required
                                 className="h-11"
                             />
-                            { apiKeyPopUp && (
+                            {apiKeyPopUp && (
                                 <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
                                     <Card className="w-full max-w-md">
                                         <CardHeader>
@@ -121,13 +119,13 @@ export default function LoginPage() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="flex justify-center">
-                                            <Link
-                                            href={"https://fal.ai/dashboard/keys"}
-                                            target="_blank"
-                                            className="text-gray-500 hover:underline"
-                                            >
-                                                Get your api key here
-                                            </Link>
+                                                <Link
+                                                    href={"https://fal.ai/dashboard/keys"}
+                                                    target="_blank"
+                                                    className="text-gray-500 hover:underline"
+                                                >
+                                                    Get your api key here
+                                                </Link>
                                             </div>
                                         </CardContent>
                                         <div className="flex justify-center p-4">
@@ -136,7 +134,7 @@ export default function LoginPage() {
                                                 type="button"
                                                 variant="outline"
                                                 onClick={() => setApiKeyPopUp(false)}
-                                                >
+                                            >
                                                 Cancel
                                             </Button>
                                         </div>
