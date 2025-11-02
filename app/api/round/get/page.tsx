@@ -15,9 +15,9 @@ function getNextRoundNumber(playerNumber: number, totalRounds: number): number {
 }
 
 async function pullNextEntry(playerNumber: number, room: MRoom){
-    const pullPlayerNumber = getNextRoundNumber(playerNumber, room.round_count);
+    const pullPlayerNumber = getNextRoundNumber(playerNumber, room.round_count!);
 
-    const { error: errorEntryFetch, data: dataEntry } = await getEntry(room.id, room.current_round, pullPlayerNumber);
+    const { error: errorEntryFetch, data: dataEntry } = await getEntry(room.id, room.current_round! - 1, pullPlayerNumber);
 
     if (errorEntryFetch){
         return {
@@ -28,7 +28,7 @@ async function pullNextEntry(playerNumber: number, room: MRoom){
     }
 
     if (dataEntry == null){
-        const otherNum = getNextRoundNumber(pullPlayerNumber, room.round_count);
+        const otherNum = getNextRoundNumber(pullPlayerNumber, room.round_count!);
 
         return await pullNextEntry(otherNum, room);
     }
@@ -69,12 +69,18 @@ export default async function GetRound(roomCode: string){
         };
     }
 
-    const createdAt = new Date(Date.parse(dataRoom?.round_ends_at));
-
-    if (!dataRoom || dataRoom.current_round <= 0 || createdAt < new Date()){
+    if (!dataRoom || dataRoom.current_round == null || dataRoom.current_round <= 0 || dataRoom.round_ends_at! < new Date()){
         return {
             success: false,
             message: "Invalid room.",
+            roundInfo: null
+        };
+    }
+
+    if (dataRoom.current_round == 1){
+        return {
+            success: true,
+            message: "First round.",
             roundInfo: null
         };
     }
