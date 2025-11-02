@@ -20,7 +20,12 @@ function generateCode() {
     return code;
 }
 
-export default async function CreateRoom(room: Omit<MRoom, "id" | "created_at" | "current_round" | "creator_id" | "round_ends_at" | "short_code">) {
+export default async function CreateRoom(
+    room: Omit<
+        MRoom,
+        "id" | "created_at" | "current_round" | "creator_id" | "round_ends_at" | "short_code">
+) {
+
     const userId = await getUserIdFromCookie();
 
     if (!userId)

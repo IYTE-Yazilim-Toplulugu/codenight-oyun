@@ -1,29 +1,28 @@
-import {fal, QueueStatus} from "@fal-ai/client";
+import { ApiError, fal, QueueStatus } from "@fal-ai/client";
 
 const endpoint = "fal-ai/recraft/v3/text-to-image";
 
-export function configure(apiKey: string){
+export function configure(apiKey: string) {
     fal.config({
         credentials: apiKey
     })
 }
 
-export async function checkApiKey(apiKey: string){
-    try{
+export async function checkApiKey(apiKey: string) {
+    try {
+
         configure(apiKey);
-        await fal.queue.status(endpoint, {
-            requestId: "jgnerkgnerk"
-        });
-    }
-    catch(e){
-        console.log(e.message);
-        return e.message !== "Unauthorized";
+        await fal.queue.status(endpoint, { requestId: "furkanigotten" });
+
+    } catch (e: ApiError<any> | any) {
+        console.log(e.status);
+        return e.status == 404;
     }
 
     return true;
 }
 
-export async function queueImage(prompt: string){
+export async function queueImage(prompt: string) {
     const { request_id } = await fal.queue.submit(endpoint, {
         input: {
             prompt: prompt
@@ -33,7 +32,7 @@ export async function queueImage(prompt: string){
     return request_id;
 }
 
-export async function generateImage(prompt: string, onQueueUp: (status: QueueStatus) => void){
+export async function generateImage(prompt: string, onQueueUp: (status: QueueStatus) => void) {
     const result = await fal.subscribe(endpoint, {
         input: {
             prompt,
@@ -47,7 +46,7 @@ export async function generateImage(prompt: string, onQueueUp: (status: QueueSta
     return result.data.images.at(0)?.url;
 }
 
-export async function getQueueResult(requestId: string){
+export async function getQueueResult(requestId: string) {
     const result = await fal.queue.result(endpoint, {
         requestId: requestId
     });

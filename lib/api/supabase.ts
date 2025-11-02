@@ -6,7 +6,6 @@ import supabase from './supabase/supabase';
 
 // Initialize Supabase clients
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY || '';
 
 // Regular client for frontend operations (respects RLS)
@@ -28,7 +27,7 @@ const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY || '';
  * @param password User's password
  */
 export const supabaseLogin = async (username: string, apiKey: string) => {
-    const { error, data } = await supabase.from("users")
+    const { error } = await supabase.from("users")
         .select("id", {
             count: "exact",
             head: true

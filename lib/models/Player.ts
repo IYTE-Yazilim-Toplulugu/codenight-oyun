@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MRoomSchema = z.object({
+export const MPlayerSchema = z.object({
     user_id: z.uuid(),
     room_id: z.uuid(),
     player_number: z.int()
@@ -9,4 +9,4 @@ export const MRoomSchema = z.object({
 
 
 // --- Type Exports ---
-export type MRoom = z.infer<typeof MRoomSchema>;
+export type MPlayer = z.infer<typeof MPlayerSchema>;
