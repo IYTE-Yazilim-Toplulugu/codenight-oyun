@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const MPlayerSchema = z.object({
-    user_id: z.uuid(),
-    room_id: z.uuid(),
+    user_id: z.uuidv4(),
+    room_id: z.uuidv4(),
     player_number: z.int()
 })
 

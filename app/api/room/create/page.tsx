@@ -1,10 +1,9 @@
 "use server"
+import { randomInt } from "node:crypto";
 
+import { supabaseInsert } from "@/lib/api/supabase";
 import { MRoom, RoomCreatePayload, RoomCreatePayloadSchema } from "@/lib/models/Room";
 import { getUserIdFromCookie } from "@/lib/util/auth";
-import supabase from "@/lib/api/supabase/supabase";
-import { randomInt } from "node:crypto";
-import { supabaseInsert } from "@/lib/api/supabase";
 
 const POSSIBLE_KEY_CHARS = "ABCDEFGHIJKLMNPRSTUVYZQWX23456789";
 const KEY_LENGTH = 8;

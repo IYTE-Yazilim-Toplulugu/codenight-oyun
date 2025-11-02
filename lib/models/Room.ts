@@ -6,7 +6,7 @@ export const ROOM_PLAYER_LIMIT = 10;
 
 export const MRoomSchema = z.object({
     id: z.uuidv4(),
-    creator_id: z.uuid(),
+    creator_id: z.uuidv4(),
     room_name: z.string(),
     short_code: RoomcodeSchema,
     round_count: z.int(),
