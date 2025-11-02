@@ -105,9 +105,10 @@ export const supabaseLogin = async (username: string, apiKey: string) => {
 export const supabaseLogout = async () => {
 
     // Clear cookies to integrate with existing auth system
-    const data = (await cookies()).delete("apiKey");
+    const username = (await cookies()).delete('username');
+    const apiKey = (await cookies()).delete("apiKey");
 
-    if (!data) {
+    if (!username || !apiKey) {
         console.error(`Supabase logout error: No cookie found to delete.`);
         return { success: false };
     }

@@ -15,6 +15,7 @@ import CreateRoom from "../api/room/create/page"
 import JoinRoom from "../api/room/join/page"
 import GetRoom from "../api/room/get/page"
 import { useToast } from "@/lib/hooks/toastHooks"
+import { supabaseLogout } from "@/lib/api/supabase"
 
 export default function JoinRoomPage() {
     const router = useRouter()
@@ -130,6 +131,23 @@ export default function JoinRoomPage() {
         setCreateRoomPopUp(false)
     }
 
+    const handleLogout = async () => {
+        setIsLoading(true)
+
+        const { success } = await supabaseLogout();
+
+        if (!success) {
+            toast({
+                title: "Logout Failed",
+                description: "An error occurred while logging out.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        router.push("/")
+    }
+
     if (isLoading) return <Loading />
 
     return (
@@ -140,7 +158,7 @@ export default function JoinRoomPage() {
             className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-400 via-pink-400 to-blue-400 p-4"
         >
             <Card className="w-full max-w-md shadow-xl border-2">
-                <CardHeader className="space-y-2 text-center">
+                <CardHeader className="space-y-2 text-center relative">
                     <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-2">
                         <svg className="w-10 h-10 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
@@ -153,6 +171,16 @@ export default function JoinRoomPage() {
                     </div>
                     <CardTitle className="text-3xl font-bold text-balance">Hey, {playerName}!</CardTitle>
                     <CardDescription className="text-base">Join an existing room or create a new one</CardDescription>
+                    <Button
+                        onClick={handleLogout}
+                        variant="ghost"
+                        className="absolute top-2 right-2 p-2 h-auto bg-purple-400 hover:bg-purple-300 cursor-pointer"
+                        aria-label="Logout"
+                    >Logout
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <form
