@@ -1,0 +1,114 @@
+"use server"
+
+import {getUserIdFromCookie} from "@/lib/util/auth";
+import supabase from "@/lib/api/supabase/supabase";
+import {MRoom} from "@/lib/models/Room";
+
+function getNextRoundNumber(playerNumber: number, totalRounds: number): number {
+    let num = playerNumber - 1;
+
+    if (num <= 0){
+        num = totalRounds;
+    }
+
+    return num;
+}
+
+async function pullNextEntry(playerNumber: number, room: MRoom){
+    const pullPlayerNumber = getNextRoundNumber(playerNumber, room.round_count);
+
+    const { error: errorEntryFetch, data: dataEntry } = await getEntry(room.id, room.current_round, pullPlayerNumber);
+
+    if (errorEntryFetch){
+        return {
+            success: false,
+            error: errorEntryFetch.message,
+            entry: null
+        };
+    }
+
+    if (dataEntry == null){
+        const otherNum = getNextRoundNumber(pullPlayerNumber, room.round_count);
+
+        return await pullNextEntry(otherNum, room);
+    }
+
+    return {
+        success: true,
+        entry: dataEntry
+    };
+}
+
+function getEntry(roomId: string, roundNum: number, num: number){
+    return supabase.from("round_entries")
+        .select<"data", string | null>()
+        .eq("players.player_number", num)
+        .eq("round_number", roundNum)
+        .eq("room_id", roomId)
+        .eq("is_prompt", false).single();
+}
+
+export default async function GetRound(roomCode: string){
+    const userId = await getUserIdFromCookie();
+
+    if (!userId)
+        return {
+            success: false,
+            message: "Forbidden",
+            roundInfo: null
+        };
+
+    const { data: dataRoom, error: errorRoomFetch } = await supabase.from("rooms")
+        .select<"*", MRoom>().eq("secret_code", roomCode).single();
+
+    if (errorRoomFetch){
+        return {
+            success: false,
+            message: "Error while fetching room: " + errorRoomFetch.message,
+            roundInfo: null
+        };
+    }
+
+    const createdAt = new Date(Date.parse(dataRoom?.round_ends_at));
+
+    if (!dataRoom || dataRoom.current_round <= 0 || createdAt < new Date()){
+        return {
+            success: false,
+            message: "Invalid room.",
+            roundInfo: null
+        };
+    }
+
+    const { data: playerNumber, error: errorPlayerFetch } = await supabase
+        .from("players")
+        .select<"player_number", number | null>()
+        .eq("user_id", userId)
+        .eq("room_id", dataRoom.id).single();
+
+    if (errorPlayerFetch){
+        return {
+            success: false,
+            message: "Error while fetching player: " + errorPlayerFetch.message,
+            roundInfo: null
+        };
+    }
+
+    if (!playerNumber || playerNumber <= 0){
+        return {
+            success: false,
+            message: "Player could not be found.",
+            roundInfo: null
+        };
+    }
+
+    const { success: entryPullSuccess, entry, error: entryPullError } = await pullNextEntry(playerNumber, dataRoom);
+
+    return {
+        success: entryPullSuccess,
+        message: entryPullSuccess ? "OK" : "Error while pulling the next entry: " + entryPullError,
+        roundInfo: entryPullSuccess ? {
+            roundNumber: dataRoom.current_round,
+            images: entry
+        } : null
+    };
+}
