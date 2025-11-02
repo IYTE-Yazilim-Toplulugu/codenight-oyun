@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import Cookie from "js-cookie"
@@ -10,21 +10,26 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MRoom, MRoomSchema, RoomcodeSchema } from "@/lib/models/Room"
+import { MRoom, RoomCode, RoomcodeSchema } from "@/lib/models/Room"
 import CreateRoom from "@/app/api/room/create/page"
+import { useToast } from "@/lib/hooks/toastHooks"
+import JoinRoom from "../api/room/join/page"
 
 export default function JoinRoomPage() {
     const router = useRouter()
 
-    const [roomCode, setRoomCode] = useState("")
-    const [playerName, setPlayerName] = useState("")
+    const [playerName, setPlayerName] = useState<string | null>(null)
 
-    const [createRoomPopUp, setCreateRoomPopUp] = useState<any>(false)
+    const [roomCode, setRoomCode] = useState("")
+    const [roomCodeError, setRoomCodeError] = useState<string | null>(null)
+
+    const [createRoomPopUp, setCreateRoomPopUp] = useState(false)
 
     const [isJoning, setIsJoning] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
 
+    const { toast } = useToast()
 
     useEffect(() => {
         // Check if user is logged in
@@ -38,26 +43,69 @@ export default function JoinRoomPage() {
 
         setPlayerName(name)
         setIsLoading(false)
+
     }, [router])
 
-    const handleJoinRoom = (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleRoomCodeChange = (value: string) => {
+        // Convert to uppercase and limit to 8 characters
+        const upperValue = value.toUpperCase().slice(0, 8);
+        setRoomCode(upperValue);
 
+        // Validate the room code in real-time
+        if (upperValue.length === 0) {
+            setRoomCodeError(null);
+        } else if (upperValue.length < 8) {
+            setRoomCodeError("Room code must be 8 characters long");
+        } else {
+            const result = RoomcodeSchema.safeParse(upperValue);
+            if (!result.success) {
+                setRoomCodeError("Room code can only contain letters and numbers");
+            } else {
+                setRoomCodeError(null);
+            }
+        }
+    };
+
+    const handleJoinRoom = async (room: Pick<MRoom, "short_code">) => {
         // Validate room code with Zod
-        const result = RoomcodeSchema.safeParse(roomCode)
+        const result = RoomcodeSchema.safeParse(room.short_code)
         if (!result.success) {
             // Handle validation error (you might want to show a user-friendly error message)
             console.error("Invalid room code:", result.error)
-            alert("Please enter a valid 8-character room code")
+            toast({
+                title: "Invalid Room Code",
+                description: "Please enter a valid room code.",
+                variant: "destructive"
+            })
             return
         }
 
         setIsJoning(true)
 
-        // Navigate to game room
-        setTimeout(() => {
+        const { success, message, roomCode } = await JoinRoom(room.short_code as RoomCode)
+        console.log({ success, message, roomCode })
+
+        if (success && roomCode) {
             router.push(`/room/${roomCode}`)
-        }, 500)
+            return
+        }
+
+        if (success && !roomCode) {
+            toast({
+                title: "Room Not Found",
+                description: "The room you are trying to join does not exist.",
+                variant: "destructive"
+            })
+            setIsJoning(false)
+            return
+        }
+
+        toast({
+            title: "Failed to Join Room",
+            description: message,
+            variant: "destructive"
+        })
+        setIsJoning(false)
     }
 
     const handleCreateRoom = async (room: MRoom) => {
@@ -100,25 +148,40 @@ export default function JoinRoomPage() {
                     <CardDescription className="text-base">Join an existing room or create a new one</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <form onSubmit={handleJoinRoom} className="space-y-4">
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+
+                            const formData = new FormData(e.target as HTMLFormElement);
+                            const roomCode = formData.get('roomCode') as string;
+                            console.log({ roomCode });
+
+                            handleJoinRoom({ short_code: roomCode } as MRoom);
+                        }}
+                        className="space-y-4"
+                    >
                         <div className="space-y-2">
                             <Label htmlFor="roomCode" className="text-sm font-medium">
                                 Room Code
                             </Label>
                             <Input
                                 id="roomCode"
+                                name="roomCode"
                                 type="text"
                                 placeholder="Enter room code"
                                 value={roomCode}
-                                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                onChange={(e) => handleRoomCodeChange(e.target.value)}
                                 maxLength={8}
-                                className="h-11 text-center text-lg font-mono tracking-widest"
+                                className={`h-11 text-center text-lg font-mono tracking-widest ${roomCodeError ? 'border-red-500' : ''}`}
                             />
+                            {roomCodeError && (
+                                <p className="text-sm text-red-500">{roomCodeError}</p>
+                            )}
                         </div>
                         <Button
                             type="submit"
                             className="w-full h-11 text-base font-semibold"
-                            disabled={isLoading || roomCode.length !== 8}
+                            disabled={isJoning || !!roomCodeError || roomCode.length === 0}
                         >
                             {isJoning ? "Joining..." : "Join Room"}
                         </Button>

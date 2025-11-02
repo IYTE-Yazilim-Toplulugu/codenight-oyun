@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-const POSSIBLE_KEY_CHARS = "ABCDEFGHIJKLMNPRSTUVYZQWX23456789";
-
-// Create a regex pattern from the allowed characters
-const roomCodeRegex = new RegExp(`^[${POSSIBLE_KEY_CHARS}]+$`);
-
-export const RoomcodeSchema = z.string().regex(roomCodeRegex).min(8).max(8);
+export const RoomcodeSchema = z.string().regex(/^[A-Z0-9]+$/).min(8).max(8);
 
 export const ROOM_PLAYER_LIMIT = 10;
 
@@ -15,10 +10,10 @@ export const MRoomSchema = z.object({
     room_name: z.string(),
     short_code: RoomcodeSchema,
     round_count: z.int(),
+    player_count: z.int(),
     current_round: z.int(),
     round_ends_at: z.iso.datetime(),
     created_at: z.iso.datetime(),
-    player_count: z.int()
 })
 
 export const RoomJoinPayloadSchema = MRoomSchema.pick({
@@ -28,9 +23,10 @@ export const RoomJoinPayloadSchema = MRoomSchema.pick({
 export const RoomCreatePayloadSchema = MRoomSchema.omit({
     id: true,
     current_round: true,
-    round_ends_at: true,
     round_count: true,
+    round_ends_at: true,
     player_count: true,
+    created_at: true,
 })
 
 
