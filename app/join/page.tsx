@@ -92,7 +92,7 @@ export default function JoinRoomPage() {
 
         setIsJoning(true)
 
-        const { success, message, roomCode } = await JoinRoom(room.short_code as RoomCode)
+        const { success, message, roomCode } = await JoinRoom(room.short_code)
 
         if (success && roomCode) {
             router.push(`/room/${roomCode}`)

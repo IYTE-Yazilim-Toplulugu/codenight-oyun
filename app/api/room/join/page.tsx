@@ -33,7 +33,7 @@ export default async function JoinRoom(roomCode: RoomCode) {
             if (success) {
                 const { data, error } = await supabaseUpdate(
                     'rooms',
-                    MRoomSchema, ['id'],
+                    MRoomSchema, { id: oldData.id },
                     { ...oldData, player_count: oldData.player_count + 1 }
                 );
 
