@@ -36,6 +36,7 @@ export default async function StartRoom(roomCode: string){
     const { error: errorUpdate } = await supabase.from("rooms")
         .update({
             current_round: 1,
+            round_count: dataFetch.player_count,
             round_ends_at: currentDate,
         }).eq("id", dataFetch.id);
 

@@ -7,6 +7,8 @@ const roomCodeRegex = new RegExp(`^[${POSSIBLE_KEY_CHARS}]+$`);
 
 export const RoomcodeSchema = z.string().regex(roomCodeRegex).min(8).max(8);
 
+export const ROOM_PLAYER_LIMIT = 10;
+
 export const MRoomSchema = z.object({
     id: z.uuidv4(),
     creator_id: z.uuid(),
@@ -15,7 +17,8 @@ export const MRoomSchema = z.object({
     round_count: z.int(),
     current_round: z.int(),
     round_ends_at: z.iso.datetime(),
-    created_at: z.iso.datetime()
+    created_at: z.iso.datetime(),
+    player_count: z.int()
 })
 
 export const RoomJoinPayloadSchema = MRoomSchema.pick({
@@ -26,6 +29,8 @@ export const RoomCreatePayloadSchema = MRoomSchema.omit({
     id: true,
     current_round: true,
     round_ends_at: true,
+    round_count: true,
+    player_count: true,
 })
 
 

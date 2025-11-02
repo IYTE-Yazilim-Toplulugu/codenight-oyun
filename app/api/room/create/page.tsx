@@ -20,12 +20,7 @@ function generateCode() {
     return code;
 }
 
-export default async function CreateRoom(
-    room: Omit<
-        MRoom,
-        "id" | "created_at" | "current_round" | "creator_id" | "round_ends_at" | "short_code">
-) {
-
+export default async function CreateRoom(name: string) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -36,7 +31,7 @@ export default async function CreateRoom(
         };
 
     const roomCreatePayload: RoomCreatePayload = {
-        ...room,
+        room_name: name,
         creator_id: userId,
         short_code: generateCode(),
         created_at: new Date().toISOString()
