@@ -6,7 +6,9 @@ export const MPlayerSchema = z.object({
     player_number: z.int()
 })
 
+export const PlayerCreatePayloadSchema = MPlayerSchema
 
 
 // --- Type Exports ---
 export type MPlayer = z.infer<typeof MPlayerSchema>;
+export type PlayerCreatePayload = z.infer<typeof PlayerCreatePayloadSchema>;

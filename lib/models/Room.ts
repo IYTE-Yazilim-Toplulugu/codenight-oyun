@@ -20,15 +20,14 @@ export const RoomJoinPayloadSchema = MRoomSchema.pick({
     short_code: true,
 })
 
+
 export const RoomCreatePayloadSchema = MRoomSchema.omit({
     id: true,
     current_round: true,
     round_count: true,
     round_ends_at: true,
-    player_count: true,
     created_at: true,
 })
-
 
 
 // --- Type Exports ---
