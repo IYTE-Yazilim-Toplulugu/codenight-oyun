@@ -1,16 +1,17 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 import Cookie from "js-cookie"
+import { motion } from "framer-motion"
 
+import Loading from "@/components/shared/Loading"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import CreateRoom from "../api/room/create/page"
-import { MRoom } from "@/lib/models/Room"
+import { MRoom, MRoomSchema, RoomcodeSchema } from "@/lib/models/Room"
+import CreateRoom from "@/app/api/room/create/page"
 
 export default function JoinRoomPage() {
     const router = useRouter()
@@ -20,8 +21,10 @@ export default function JoinRoomPage() {
 
     const [createRoomPopUp, setCreateRoomPopUp] = useState<any>(false)
 
+    const [isJoning, setIsJoning] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
-    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
         // Check if user is logged in
@@ -34,11 +37,22 @@ export default function JoinRoomPage() {
         }
 
         setPlayerName(name)
+        setIsLoading(false)
     }, [router])
 
     const handleJoinRoom = (e: React.FormEvent) => {
         e.preventDefault()
-        setIsLoading(true)
+
+        // Validate room code with Zod
+        const result = RoomcodeSchema.safeParse(roomCode)
+        if (!result.success) {
+            // Handle validation error (you might want to show a user-friendly error message)
+            console.error("Invalid room code:", result.error)
+            alert("Please enter a valid 8-character room code")
+            return
+        }
+
+        setIsJoning(true)
 
         // Navigate to game room
         setTimeout(() => {
@@ -47,7 +61,7 @@ export default function JoinRoomPage() {
     }
 
     const handleCreateRoom = async (room: MRoom) => {
-        setIsLoading(true)
+        setIsCreating(true)
         // Generate a random room code
         const { success, message, roomCode } = await CreateRoom(room)
 
@@ -57,12 +71,19 @@ export default function JoinRoomPage() {
             router.push(`/room/${roomCode}`)
         }
 
-        setIsLoading(false)
+        setIsCreating(false)
         setCreateRoomPopUp(false)
     }
 
+    if (isLoading) return <Loading />
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-400 via-pink-400 to-blue-400 p-4">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-400 via-pink-400 to-blue-400 p-4"
+        >
             <Card className="w-full max-w-md shadow-xl border-2">
                 <CardHeader className="space-y-2 text-center">
                     <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-2">
@@ -90,16 +111,16 @@ export default function JoinRoomPage() {
                                 placeholder="Enter room code"
                                 value={roomCode}
                                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                                maxLength={6}
+                                maxLength={8}
                                 className="h-11 text-center text-lg font-mono tracking-widest"
                             />
                         </div>
                         <Button
                             type="submit"
                             className="w-full h-11 text-base font-semibold"
-                            disabled={isLoading || roomCode.length !== 6}
+                            disabled={isLoading || roomCode.length !== 8}
                         >
-                            {isLoading ? "Joining..." : "Join Room"}
+                            {isJoning ? "Joining..." : "Join Room"}
                         </Button>
                     </form>
 
@@ -116,7 +137,7 @@ export default function JoinRoomPage() {
                         onClick={() => setCreateRoomPopUp(true)}
                         variant="outline"
                         className="w-full h-11 text-base font-semibold border-2 bg-transparent"
-                        disabled={isLoading}
+                        disabled={isCreating}
                     >
                         Create New Room
                     </Button>
@@ -149,11 +170,15 @@ export default function JoinRoomPage() {
                                                 <Button
                                                     type="button"
                                                     variant="outline"
+                                                    disabled={isCreating}
                                                     onClick={() => setCreateRoomPopUp(false)}
                                                 >
                                                     Cancel
                                                 </Button>
-                                                <Button type="submit">Create Room</Button>
+                                                <Button type="submit" disabled={isCreating}
+                                                >
+                                                    Create Room
+                                                </Button>
                                             </div>
                                         </div>
                                     </form>
@@ -163,6 +188,6 @@ export default function JoinRoomPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </motion.div>
     )
 }

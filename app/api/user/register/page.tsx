@@ -4,6 +4,7 @@ import { MUser } from "@/lib/models/User";
 import supabase from "@/lib/api/supabase/supabase";
 import { checkApiKey } from "@/lib/util/fal";
 import { randomInt } from "node:crypto";
+import LoginUser from "../login/page";
 
 export default async function UserRegister(user: Omit<MUser, "is_admin" | "admin_pass" | "id" | "avatar">) {
     const status = await checkApiKey(user.api_key);
@@ -23,6 +24,10 @@ export default async function UserRegister(user: Omit<MUser, "is_admin" | "admin
     const { error } = await supabase
         .from("users")
         .insert(userToAdd);
+
+    if (error?.code == "23505") {
+        return LoginUser(user.username, user.api_key);
+    }
 
     console.error("User registration error:", error);
 

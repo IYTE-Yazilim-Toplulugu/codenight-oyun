@@ -13,6 +13,7 @@ import { checkApiKey } from "@/lib/util/fal"
 import Link from "next/link"
 import UserRegister from "./api/user/register/page"
 import { MUser } from "@/lib/models/User"
+import Loading from "@/components/shared/Loading"
 
 export default function LoginPage() {
 
@@ -21,7 +22,8 @@ export default function LoginPage() {
     const [name, setName] = useState("")
     const [apiKey, setApiKey] = useState("")
 
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [isSubmitting, setIsSubmitting] = useState(true)
 
     useEffect(() => {
 
@@ -34,7 +36,9 @@ export default function LoginPage() {
 
             if (isValid) {
                 router.push("/join")
+                return
             }
+            setIsLoading(false)
         }
 
         checkApiKeyAsync()
@@ -43,7 +47,7 @@ export default function LoginPage() {
     const handleLogin = async (e: React.FormEvent) => {
 
         e.preventDefault()
-        setIsLoading(true)
+        setIsSubmitting(true)
 
         const { success, message } = await UserRegister({ username: name, api_key: apiKey } as MUser)
 
@@ -55,8 +59,10 @@ export default function LoginPage() {
             router.push("/join")
         }
 
-        setIsLoading(false)
+        setIsSubmitting(false)
     }
+
+    if (isLoading) return <Loading />
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-400 via-pink-400 to-blue-400 p-4">
@@ -72,7 +78,7 @@ export default function LoginPage() {
                             />
                         </svg>
                     </div>
-                    <CardTitle className="text-3xl font-bold text-balance">Welcome to Draw & Guess!</CardTitle>
+                    <CardTitle className="flex flex-row items-baseline text-3xl font-bold text-balance">Welcome to Gu<p className="font-extrabold text-4xl text-purple-400">AI</p>ss!</CardTitle>
                     <CardDescription className="text-base">Enter your details to start playing</CardDescription>
                 </CardHeader>
                 <CardContent>
