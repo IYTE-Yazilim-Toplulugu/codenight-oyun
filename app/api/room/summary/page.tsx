@@ -1,8 +1,9 @@
-import {getUserIdFromCookie} from "@/lib/util/auth";
+"use server";
+import { getUserIdFromCookie } from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
-import {MRoundEntry} from "@/lib/models/Round";
+import { MRoundEntry } from "@/lib/models/Round";
 
-export default async function SummaryRoom(roomCode: string){
+export default async function SummaryRoom(roomCode: string) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -16,7 +17,7 @@ export default async function SummaryRoom(roomCode: string){
         .select("current_round,round_count,id")
         .eq("secret_code", roomCode).single();
 
-    if (errorFetch){
+    if (errorFetch) {
         return {
             success: false,
             message: "Error while fetching room: " + errorFetch.message,
@@ -37,7 +38,7 @@ export default async function SummaryRoom(roomCode: string){
         .eq("room_id", dataFetch.id)
         .order("created_at");
 
-    if (error){
+    if (error) {
         return {
             success: false,
             message: "Error while fetching entries: " + error.message,

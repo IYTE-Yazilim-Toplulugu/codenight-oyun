@@ -12,6 +12,7 @@ export const MRoomSchema = z.object({
     short_code: RoomCodeSchema,
     round_count: z.int().nullable(),
     player_count: z.int(),
+    submit_count: z.int().nullable(),
     current_round: z.int().nullable(),
     round_ends_at: TimestampSchema.nullable(),
     created_at: TimestampSchema,
@@ -28,6 +29,7 @@ export const RoomCreatePayloadSchema = MRoomSchema.omit({
     round_count: true,
     round_ends_at: true,
     created_at: true,
+    submit_count: true,
 })
 
 export const RoomGetPayloadSchema = MRoomSchema.pick({

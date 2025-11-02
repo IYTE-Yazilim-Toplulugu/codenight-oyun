@@ -7,8 +7,8 @@ export const MRoundEntrySchema = z.object({
     round_id: z.int(),
     author_id: z.uuidv4(),
     room_id: z.uuidv4(),
-    is_prompt: z.boolean(),
-    data: z.string()
+    prompt: z.string(),
+    image: z.string(),
 })
 
 // --- Type Exports ---

@@ -1,9 +1,10 @@
-import {getUserIdFromCookie} from "@/lib/util/auth";
+"use server"
+import { getUserIdFromCookie } from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
-import {MRoom} from "@/lib/models/Room";
-import {ROUND_TIMESPAN} from "@/lib/models/Round";
+import { MRoom } from "@/lib/models/Room";
+import { ROUND_TIMESPAN } from "@/lib/models/Round";
 
-export default async function StartRoom(roomCode: string){
+export default async function StartRoom(roomCode: string) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -17,14 +18,14 @@ export default async function StartRoom(roomCode: string){
         .select<"*", MRoom>()
         .eq("secret_code", roomCode).single();
 
-    if (errorFetch){
+    if (errorFetch) {
         return {
             success: false,
             message: "Error while fetching room: " + errorFetch.message
         };
     }
 
-    if (!dataFetch){
+    if (!dataFetch) {
         return {
             success: false,
             message: "Room could not be found."
@@ -40,7 +41,7 @@ export default async function StartRoom(roomCode: string){
             round_ends_at: currentDate,
         }).eq("id", dataFetch.id);
 
-    if (errorUpdate){
+    if (errorUpdate) {
         return {
             success: false,
             message: "Error while updating room: " + errorUpdate.message

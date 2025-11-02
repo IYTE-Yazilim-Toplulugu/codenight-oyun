@@ -2,7 +2,8 @@
 
 import { supabaseFetcherSingle } from "@/lib/api/supabase";
 import { GetPlayer, GetPlayers } from "../../player/get/page";
-import { MRoomSchema, RoomGetPayload } from "@/lib/models/Room";
+import { MRoom, MRoomSchema, RoomGetPayload } from "@/lib/models/Room";
+import { MPlayer } from "@/lib/models/Player";
 
 
 export default async function GetRoom() {
@@ -66,7 +67,7 @@ export async function GetFullRoom() {
         };
     }
 
-    const fullRoom = {
+    const fullRoom: MRoom & { players: MPlayer[] } = {
         ...data,
         players: resultPlayers.players
     };
