@@ -306,14 +306,14 @@ export const supabaseUpdate = async <T extends z.ZodTypeAny>(
     filters: Record<string, any>,
     data: any
 ): Promise<MutatorResponse<z.infer<T>>> => {
-    let query = supabase.from(from).update(data).select().single();
+    let query = supabase.from(from).update(data).select();
 
     // Apply filters
     Object.entries(filters).forEach(([key, value]) => {
         query = query.eq(key, value);
     });
 
-    const { data: responseData, error } = await query;
+    const { data: responseData, error } = await query.single();
 
     // Handle Supabase error first
     if (error) {
