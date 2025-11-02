@@ -24,7 +24,7 @@ export async function GetPlayers(room: Pick<MRoom, 'id'>) {
         room_id: room.id,
     }
 
-    const { data, error } = await supabaseFetcher('players', MPlayerSchema.array(), playersGetPayload);
+    const { data, error } = await supabaseFetcher('players', MPlayerSchema, playersGetPayload);
 
     return {
         success: !error,

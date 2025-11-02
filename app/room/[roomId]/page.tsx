@@ -10,6 +10,10 @@ import { PlayerCard } from "@/components/shared/PlayerCard"
 import { ResultBook } from "@/components/ResultBook"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { GetFullRoom } from "@/app/api/room/get/page"
+import { toast } from "@/lib/hooks/toastHooks"
+import Loading from "@/components/shared/Loading"
+
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -30,8 +34,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     const [guess, setGuess] = useState("")
     const [timeRemaining, setTimeRemaining] = useState(45)
     const { roomId } = useParams()
+    const [roomData, setRoomData] = useState<any>(null);
 
-
+    const [isLoading, setIsLoading] = useState(true)
+    
+ 
     // Mock data for demonstration
     const players: Player[] = [
         { id: "1", name: "Alice", status: "done" },
@@ -64,6 +71,31 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             imageUrl: "/placeholder.svg?height=300&width=400",
         },
     ]
+
+    useEffect(() => {
+        const getData = async () => {
+            try{
+
+            const {success, message, room} = await GetFullRoom();
+
+            if(!success) {
+                toast({
+                    title:"an error occured.",
+                    description:"room object couldnt fetched.",
+                    variant: "destructive"
+                })
+                return;
+            }
+            setRoomData(room);
+
+            }finally{
+                setIsLoading(false)}
+
+
+        }
+
+        getData()
+    }, [])
 
     // Timer countdown
     useEffect(() => {
@@ -100,10 +132,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         }
     }, [gameState])
 
+    if (isLoading) return <Loading />
     return (
         <div className="min-h-screen flex flex-col bg-background">
             {/* Header Area */}
-            <GameHeader roomCode={roomId as string} currentRound={1} totalRounds={8} timeRemaining={timeRemaining} />
+            <GameHeader roomCode={roomId as string} currentRound={1} totalRounds={roomData.player_count??""} timeRemaining={timeRemaining} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex gap-6 p-6 max-w-7xl mx-auto w-full">
