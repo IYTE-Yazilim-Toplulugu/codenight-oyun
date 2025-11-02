@@ -21,6 +21,7 @@ export default function LoginPage() {
 
     const [name, setName] = useState("")
     const [apiKey, setApiKey] = useState("")
+    const [apiKeyPopUp, setApiKeyPopUp] = useState<any>(false)
 
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(true)
@@ -57,6 +58,8 @@ export default function LoginPage() {
             Cookies.set("apiKey", apiKey)
 
             router.push("/join")
+        } else {
+            setApiKeyPopUp(true)
         }
 
         setIsSubmitting(false)
@@ -110,6 +113,37 @@ export default function LoginPage() {
                                 required
                                 className="h-11"
                             />
+                            { apiKeyPopUp && (
+                                <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
+                                    <Card className="w-full max-w-md">
+                                        <CardHeader>
+                                            <CardTitle > Geçerli bir api key girin! </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex justify-center">
+                                            <Link
+                                            href={"https://fal.ai/dashboard/keys"}
+                                            target="_blank"
+                                            className="text-gray-500 hover:underline"
+                                            >
+                                                Get your api key here
+                                            </Link>
+                                            </div>
+                                        </CardContent>
+                                        <div className="flex justify-center p-4">
+                                            <Button
+                                                className="flex justify-center items-center"
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setApiKeyPopUp(false)}
+                                                >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                </div>
+                            )}
+
                             <Link
                                 href={"https://fal.ai/dashboard/keys"}
                                 target="_blank"
