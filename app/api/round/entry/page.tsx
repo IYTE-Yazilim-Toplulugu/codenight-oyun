@@ -10,8 +10,7 @@ export default async function EntryRound(entry: Omit<MRoundEntry, "round_id" | "
     if (!userId)
         return {
             success: false,
-            message: "Forbidden",
-            roomCode: null
+            message: "Forbidden"
         };
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")

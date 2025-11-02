@@ -7,21 +7,18 @@ import { Loader2 } from "lucide-react"
 
 import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
-import { ResultBook } from "@/components/ResultBook"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { GetFullRoom } from "@/app/api/room/get/page"
-import { toast } from "@/lib/hooks/toastHooks"
-import Loading from "@/components/shared/Loading"
-
+import {MRoom} from "@/lib/models/Room";
+import {GetFullRoom} from "@/app/api/room/get/page";
+import {PlayerMetaPayload} from "@/lib/models/Player";
+import {GetPlayerMeta} from "@/app/api/player/get/page";
+import EntryRound from "@/app/api/round/entry/page";
+import {configure, generateImage} from "@/lib/util/fal";
+import Cookie from "js-cookie";
+import {MRoundEntry} from "@/lib/models/Round";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
-
-interface Player {
-    id: string
-    name: string
-    status: "done" | "active" | "waiting"
-}
 
 type RoomPageProps = {
     params: {
@@ -29,114 +26,129 @@ type RoomPageProps = {
     }
 };
 
+async function submit(prompt: string, roomId: string, image: string){
+    const { success, message } = await EntryRound({
+        image: image,
+        prompt: prompt,
+        room_id: roomId
+    });
+
+    if (!success){
+        console.error("Submit error: ", message);
+    }
+
+    return success;
+}
+
+async function fetchPlayers(roomId: string){
+    const { success, message, players } = await GetPlayerMeta({id: roomId});
+
+    if (!success){
+        console.error("Player meta fetch failed: ", message);
+        return;
+    }
+
+    return players;
+}
+
 export default function GameRoomPage({ params }: RoomPageProps) {
-    const [gameState, setGameState] = useState<GameState>("WAITING")
+    const [room, setRoom] = useState<MRoom | null>();
+    const [players, setPlayers] = useState<PlayerMetaPayload[] | null>();
+    const [remaining, setRemaining] = useState<number>(0);
+    const [gameState, setGameState] = useState<GameState>("WAITING");
+    const [entry, setEntry] = useState<MRoundEntry | null>();
+
+    const [image, setImage] = useState<string | null>(null);
+    const [submitted, setSubmitted] = useState<boolean>(false);
     const [guess, setGuess] = useState("")
-    const [timeRemaining, setTimeRemaining] = useState(45)
+
     const { roomId } = useParams()
-    const [roomData, setRoomData] = useState<any>(null);
 
-    const [isLoading, setIsLoading] = useState(true)
-    
- 
-    // Mock data for demonstration
-    const players: Player[] = [
-        { id: "1", name: "Alice", status: "done" },
-        { id: "2", name: "Bob", status: "active" },
-        { id: "3", name: "Carlos", status: "waiting" },
-        { id: "4", name: "Diana", status: "waiting" },
-    ]
+    const apiKey = Cookie.get("apiKey");
 
-    const mockResults = [
-        {
-            playerName: "Alice",
-            type: "wrote" as const,
-            content: "A cat flying a spaceship",
-        },
-        {
-            playerName: "Bob",
-            type: "guessed" as const,
-            content: "",
-            imageUrl: "/placeholder.svg?height=300&width=400",
-        },
-        {
-            playerName: "Carlos",
-            type: "guessed" as const,
-            content: "A rocket cat",
-        },
-        {
-            playerName: "Diana",
-            type: "guessed" as const,
-            content: "",
-            imageUrl: "/placeholder.svg?height=300&width=400",
-        },
-    ]
+    function getRemainingTime(){
+        if (room == null || room.round_ends_at == null){
+            return -2;
+        }
+
+        return (room.round_ends_at.getTime() - Date.now()) / 1000.0;
+    }
 
     useEffect(() => {
-        const getData = async () => {
-            try{
+        if (apiKey){
+            configure(apiKey);
+        }
 
-            const {success, message, room} = await GetFullRoom();
-
-            if(!success) {
-                toast({
-                    title:"an error occured.",
-                    description:"room object couldnt fetched.",
-                    variant: "destructive"
-                })
+        GetFullRoom().then(x => {
+            if (!x.success){
+                console.error("Room fetch failed: ", x.message);
                 return;
             }
-            setRoomData(room);
 
-            }finally{
-                setIsLoading(false)}
+            setRoom(room);
+            if (room?.current_round != null){
+                setGameState("GUESSING");
+            }
+            fetchPlayers(room!.id).then(setPlayers);
+        });
+
+        setInterval(async () => {
+            if (room == null)
+                return;
+
+            const players = await fetchPlayers(room.id);
+            setPlayers(players);
+
+            if (room.current_round == null && gameState != "WAITING"){
+                setGameState("WAITING");
+            }
+
+            if (remaining <= 0 && submitted){
+                const success = await submit(guess, room.id, image!);
+                if (!success){
+                    // toast
+                }
 
 
-        }
+            }
 
-        getData()
-    }, [])
+            setGameState(remaining <= 0 ? "RESULTS" : "GUESSING");
+        }, 5000);
 
-    // Timer countdown
-    useEffect(() => {
-        if (gameState === "GUESSING" && timeRemaining > 0) {
-            const timer = setInterval(() => {
-                setTimeRemaining((prev) => prev - 1)
-            }, 1000)
-            return () => clearInterval(timer)
-        }
-    }, [gameState, timeRemaining])
+        setInterval(async () => {
+            if (room == null)
+                return;
 
-    const handleSubmitGuess = () => {
-        if (guess.trim()) {
-            console.log("Submitted guess:", guess)
-            setGuess("")
-            // Transition to results after submission
-            setTimeout(() => setGameState("RESULTS"), 500)
+            const r = getRemainingTime();
+
+            if (r >= 0)
+                setRemaining(r);
+        }, 1000);
+    })
+
+    const handleSubmitGuess = async () => {
+        const finalGuess = guess.trim();
+        if (finalGuess) {
+            console.log("Submitted guess:", finalGuess)
+            const image = await generateImage(finalGuess, (status) => {
+                console.log(status.status);
+            });
+
+            if (image){
+                setImage(image);
+            }
+            else{
+                console.error("Image could not be fetched.");
+
+                // toast
+            }
         }
     }
 
-    const handlePlayAgain = () => {
-        setGameState("WAITING")
-        setTimeRemaining(45)
-        setGuess("")
-        // Simulate starting a new round
-        setTimeout(() => setGameState("GUESSING"), 2000)
-    }
-
-    // Demo: Auto-transition through states
-    useEffect(() => {
-        if (gameState === "WAITING") {
-            const timer = setTimeout(() => setGameState("GUESSING"), 3000)
-            return () => clearTimeout(timer)
-        }
-    }, [gameState])
-
-    if (isLoading) return <Loading />
     return (
         <div className="min-h-screen flex flex-col bg-background">
             {/* Header Area */}
-            <GameHeader roomCode={roomId as string} currentRound={1} totalRounds={roomData.player_count??""} timeRemaining={timeRemaining} />
+            <GameHeader roomCode={roomId as string} currentRound={room?.current_round ?? 0} totalRounds={room?.round_count ?? 0} timeRemaining={remaining} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex gap-6 p-6 max-w-7xl mx-auto w-full">
@@ -148,8 +160,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                             Players
                         </h2>
                         <div className="space-y-3">
-                            {players.map((player) => (
-                                <PlayerCard key={player.id} name={player.name} status={player.status} />
+                            {players && players.map((player) => (
+                                <PlayerCard key={player.user_id} name={player.users.username} num={player.player_number} />
                             ))}
                         </div>
                     </div>
@@ -175,7 +187,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                             </div>
                         )}
 
-                        {gameState === "RESULTS" && <ResultBook results={mockResults} />}
+                        {/*gameState === "RESULTS" && <ResultBook results={mockResults} />*/}
                     </div>
                 </main>
             </div>
@@ -219,9 +231,9 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
                     {gameState === "RESULTS" && (
                         <div className="flex items-center justify-center">
-                            <Button size="lg" onClick={handlePlayAgain} className="rounded-xl px-12 py-6 text-lg font-semibold">
+                            {/*<Button size="lg" onClick={handlePlayAgain} className="rounded-xl px-12 py-6 text-lg font-semibold">
                                 Play Again
-                            </Button>
+                            </Button>*/}
                         </div>
                     )}
                 </div>

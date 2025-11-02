@@ -2,10 +2,11 @@ import { Check, Pencil } from "lucide-react"
 
 interface PlayerCardProps {
     name: string
-    status: "done" | "active" | "waiting"
+    num: number
 }
 
-export function PlayerCard({ name, status }: PlayerCardProps) {
+export function PlayerCard({ name, num }: PlayerCardProps) {
+    const status = "done";
     return (
         <div
             className={` relative px-4 py-3 rounded-2xl border-2 transition-all 
