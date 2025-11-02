@@ -15,7 +15,6 @@ export async function checkApiKey(apiKey: string) {
         await fal.queue.status(endpoint, { requestId: "furkanigotten" });
 
     } catch (e: ApiError<any> | any) {
-        console.log(e.status);
         return e.status == 404;
     }
 

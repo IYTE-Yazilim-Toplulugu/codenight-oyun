@@ -28,17 +28,23 @@ const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY || '';
  */
 export const supabaseLogin = async (username: string, apiKey: string) => {
     const { data, error } = await supabase.from("users")
-        .select("id", {
-            count: "exact",
-            head: true
-        }).eq("username", username).eq("api_key", apiKey);
+        .select()
+        .eq("username", username)
+        .eq("api_key", apiKey)
+        .single();
 
 
-
+    if (error && error.code === 'PGRST116') {
+        return {
+            success: false,
+            message: "User not found.",
+            user: null,
+        }
+    }
     if (error) {
         return {
             success: false,
-            message: error.message,
+            message: error?.message,
             user: null
         }
     }

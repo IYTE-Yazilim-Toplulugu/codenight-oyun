@@ -11,11 +11,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MRoom, RoomCode, RoomCodeSchema } from "@/lib/models/Room"
-import CreateRoom from "@/app/api/room/create/page"
-import { useToast } from "@/lib/hooks/toastHooks"
+import CreateRoom from "../api/room/create/page"
 import JoinRoom from "../api/room/join/page"
-import { GetPlayer } from "../api/player/get/page"
 import GetRoom from "../api/room/get/page"
+import { useToast } from "@/lib/hooks/toastHooks"
 
 export default function JoinRoomPage() {
     const router = useRouter()
@@ -35,7 +34,6 @@ export default function JoinRoomPage() {
 
     useEffect(() => {
         const checkUserLoggedIn = async () => {
-            // Check if user is logged in
             const name = Cookie.get("username")
             const apiKey = Cookie.get("apiKey")
 
@@ -48,15 +46,15 @@ export default function JoinRoomPage() {
 
             if (room) {
                 router.push(`/room/${room.short_code}`)
+                return
             }
 
             setPlayerName(name)
-            setIsLoading(false)
         }
 
 
-        checkUserLoggedIn()
-    }, [router])
+        checkUserLoggedIn().then(() => setIsLoading(false))
+    }, [])
 
     const handleRoomCodeChange = (value: string) => {
         // Convert to uppercase and limit to 8 characters
@@ -95,7 +93,6 @@ export default function JoinRoomPage() {
         setIsJoning(true)
 
         const { success, message, roomCode } = await JoinRoom(room.short_code as RoomCode)
-        console.log({ success, message, roomCode })
 
         if (success && roomCode) {
             router.push(`/room/${roomCode}`)

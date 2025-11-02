@@ -14,6 +14,7 @@ import Link from "next/link"
 import UserRegister from "./api/user/register/page"
 import { MUser } from "@/lib/models/User"
 import Loading from "@/components/shared/Loading"
+import { toast } from "@/lib/hooks/toastHooks"
 
 export default function LoginPage() {
 
@@ -24,19 +25,21 @@ export default function LoginPage() {
     const [apiKeyPopUp, setApiKeyPopUp] = useState<any>(false)
 
     const [isLoading, setIsLoading] = useState(true)
-    const [isSubmitting, setIsSubmitting] = useState(true)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
 
         const checkApiKeyAsync = async () => {
             const apiKey = Cookies.get("apiKey")
 
-            const isValid = await checkApiKey(apiKey || "")
-
-            if (isValid) {
-                router.push("/join")
-                return
+            if (apiKey) {
+                const isValid = await checkApiKey(apiKey)
+                if (isValid) {
+                    router.push("/join")
+                    return
+                }
             }
+
             setIsLoading(false)
         }
 
@@ -48,17 +51,27 @@ export default function LoginPage() {
         e.preventDefault()
         setIsSubmitting(true)
 
-        const { user, success } = await UserRegister({ username: name, api_key: apiKey } as MUser)
+        const { success, message } = await UserRegister({ username: name, api_key: apiKey } as MUser)
 
         if (success) {
-            // Store credentials in localStorage
-            Cookies.set("username", user.name)
-            Cookies.set("apiKey", user.apiKey)
-
+            Cookies.set("apiKey", apiKey)
+            Cookies.set("username", name)
             router.push("/join")
-        } else {
+            return
+        }
+
+        if (message === "API Key was wrong.") {
+
             setApiKeyPopUp(true)
         }
+        if (message === "User not found.") {
+            toast({
+                title: "Login Failed",
+                description: message,
+                variant: "destructive",
+            })
+        }
+
 
         setIsSubmitting(false)
     }
@@ -150,8 +163,8 @@ export default function LoginPage() {
                                 Get your api key here
                             </Link>
                         </div>
-                        <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isLoading}>
-                            {isLoading ? "Logging in..." : "Continue"}
+                        <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isSubmitting}>
+                            {isSubmitting ? "Logging in..." : "Continue"}
                         </Button>
                     </form>
                 </CardContent>
