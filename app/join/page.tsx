@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MRoom, RoomCode, RoomcodeSchema } from "@/lib/models/Room"
+import { MRoom, RoomCode, RoomCodeSchema } from "@/lib/models/Room"
 import CreateRoom from "@/app/api/room/create/page"
 import { useToast } from "@/lib/hooks/toastHooks"
 import JoinRoom from "../api/room/join/page"
@@ -57,7 +57,7 @@ export default function JoinRoomPage() {
         } else if (upperValue.length < 8) {
             setRoomCodeError("Room code must be 8 characters long");
         } else {
-            const result = RoomcodeSchema.safeParse(upperValue);
+            const result = RoomCodeSchema.safeParse(upperValue);
             if (!result.success) {
                 setRoomCodeError("Room code can only contain letters and numbers");
             } else {
@@ -68,7 +68,7 @@ export default function JoinRoomPage() {
 
     const handleJoinRoom = async (room: Pick<MRoom, "short_code">) => {
         // Validate room code with Zod
-        const result = RoomcodeSchema.safeParse(room.short_code)
+        const result = RoomCodeSchema.safeParse(room.short_code)
         if (!result.success) {
             // Handle validation error (you might want to show a user-friendly error message)
             console.error("Invalid room code:", result.error)

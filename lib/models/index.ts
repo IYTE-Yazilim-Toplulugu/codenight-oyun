@@ -5,5 +5,4 @@ export * as userModel from './User';
 export * as playerModel from './Player';
 export * as roomModel from './Room';
 export * as roundModel from './Round';
-
-
+export * as commonModel from './Common';

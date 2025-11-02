@@ -9,7 +9,7 @@ export const MUserSchema = z.object({
     api_key: z.string(),
     avatar: z.int(),
     is_admin: z.boolean(),
-    admin_pass: z.string()
+    admin_pass: z.string().nullable(),
 });
 
 // --- Type Exports ---
