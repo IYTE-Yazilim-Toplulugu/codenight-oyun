@@ -67,9 +67,9 @@ export async function GetFullRoom() {
         };
     }
 
-    const fullRoom: MRoom & { players: MPlayer[] } = {
+    const fullRoom: MRoom & { players: MPlayer[] | null } = {
         ...data,
-        players: resultPlayers.players
+        players: resultPlayers?.players || null
     };
 
     return {
