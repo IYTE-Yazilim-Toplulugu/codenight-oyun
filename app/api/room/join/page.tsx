@@ -25,7 +25,7 @@ export default async function JoinRoom(roomCode: RoomCode) {
     const { data, error } = await supabaseFetcherSingle('rooms', MRoomSchema, roomJoinPayload);
 
     if (data) {
-        let oldData = data;
+        const oldData = data;
         if (data.player_count <= ROOM_MAX_PLAYERS) {
 
             const { success, message } = await CreatePlayer(oldData.player_count + 1, oldData.id);
@@ -34,7 +34,7 @@ export default async function JoinRoom(roomCode: RoomCode) {
                 const { data, error } = await supabaseUpdate(
                     'rooms',
                     MRoomSchema, { id: oldData.id },
-                    { ...oldData, player_count: oldData.player_count + 1 }
+                    { player_count: oldData.player_count + 1 }
                 );
 
                 // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

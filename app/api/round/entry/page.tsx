@@ -25,7 +25,7 @@ export default async function EntryRound(entry: Omit<MRoundEntry, "round_id" | "
         };
     }
 
-    if (!entry.is_prompt && !entry.data.startsWith("https://v3b.fal.media/files/b")){
+    if (!entry.image.startsWith("https://v3b.fal.media/files/b")){
         return {
             success: false,
             message: "The image must indicate a fal ai url."

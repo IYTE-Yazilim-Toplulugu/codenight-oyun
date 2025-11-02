@@ -1,6 +1,6 @@
 "use server"
 import { getUserIdFromCookie } from "@/lib/util/auth";
-import { MPlayerSchema, PlayerGetPayload, PlayersGetPayload } from "@/lib/models/Player";
+import { MPlayerSchema, PlayerGetPayload, PlayerMetaPayloadSchema, PlayersGetPayload } from "@/lib/models/Player";
 import { supabaseFetcher, supabaseFetcherSingle } from "@/lib/api/supabase";
 import { MRoom } from "@/lib/models/Room";
 
@@ -17,7 +17,7 @@ export async function GetPlayers(room: Pick<MRoom, 'id'>) {
         return {
             success: false,
             message: "Forbidden",
-            roomCode: null
+            players: null
         };
 
     const playersGetPayload: PlayersGetPayload = {
@@ -25,6 +25,29 @@ export async function GetPlayers(room: Pick<MRoom, 'id'>) {
     }
 
     const { data, error } = await supabaseFetcher('players', MPlayerSchema, playersGetPayload);
+
+    return {
+        success: !error,
+        message: data ? "OK" : error?.message,
+        players: data ? data : null,
+    };
+}
+
+export async function GetPlayerMeta(room: Pick<MRoom, 'id'>){
+    const userId = await getUserIdFromCookie();
+
+    if (!userId)
+        return {
+            success: false,
+            message: "Forbidden",
+            players: null
+        };
+
+    const playersGetPayload: PlayersGetPayload = {
+        room_id: room.id,
+    }
+
+    const { error, data } = await supabaseFetcher("players", PlayerMetaPayloadSchema, playersGetPayload);
 
     return {
         success: !error,
