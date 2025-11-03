@@ -3,6 +3,7 @@ import { getUserIdFromCookie } from "@/lib/util/auth";
 import { MPlayerSchema, PlayerGetPayload, PlayerMetaPayloadSchema, PlayersGetPayload } from "@/lib/models/Player";
 import { supabaseFetcher, supabaseFetcherSingle } from "@/lib/api/supabase";
 import { MRoom } from "@/lib/models/Room";
+import supabase from "@/lib/api/supabase/supabase";
 
 /**
  * Retrieves the players associated with the room.
@@ -33,13 +34,21 @@ export async function GetPlayers(room: Pick<MRoom, 'id'>) {
     };
 }
 
+export type PlayerMeta = {
+    player_number: number
+    users: {
+        id: string,
+        username: string,
+    }
+};
+
 /**
  * Retrieves the player metadata associated with the room.
  *
  * @param room - The room for which to retrieve player metadata.
  * @return An object indicating success status, message, and the player metadata if successful.
  */
-export async function GetPlayerMeta(room: Pick<MRoom, 'id'>) {
+export async function GetPlayerMeta(room: Pick<MRoom, 'id'>){
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -53,12 +62,17 @@ export async function GetPlayerMeta(room: Pick<MRoom, 'id'>) {
         room_id: room.id,
     }
 
-    const { error, data } = await supabaseFetcher("players", PlayerMetaPayloadSchema, playersGetPayload);
+    const { error, data } = await supabase.from("players")
+        .select("player_number, users ( id, username )")
+        .eq("room_id", room.id);
+
+    console.log(data);
+    //const { error, data } = await supabaseFetcher("players", PlayerMetaPayloadSchema, playersGetPayload);
 
     return {
         success: !error,
         message: data ? "OK" : error?.message,
-        players: data ? data : null,
+        players: data ? data.map<PlayerMeta>(x => x as unknown as PlayerMeta): null,
     };
 }
 
