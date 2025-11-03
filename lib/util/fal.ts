@@ -1,6 +1,6 @@
 import { ApiError, fal, QueueStatus } from "@fal-ai/client";
 
-const endpoint = "fal-ai/flux/dev";
+const endpoint = "fal-ai/bytedance/seedream/v4/text-to-image";
 
 export function configure(apiKey: string) {
     fal.config({

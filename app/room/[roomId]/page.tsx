@@ -82,7 +82,6 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     const [submitted, setSubmitted] = useState<boolean>(false);
     const [generating, setGenerating] = useState<boolean>(false);
     const [guess, setGuess] = useState("")
-    const [currentResult, setCurrentResult] = useState<number | null>(null);
 
     const { roomId } = useParams()
 
@@ -132,6 +131,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
     async function reloadRoom() {
         const room = await fetchRoom();
+        const changed = room?.current_round != roomRef.current?.current_round;
         roomRef.current = room;
         setPlayers(room?.players);
         setCurrentRound(room?.current_round ?? 0);
@@ -147,27 +147,49 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             return null;
         }
 
-        if (room.current_round != null) {
+        console.log("current round " + room.current_round)
+        if (room.current_round === -1){
+            setGameState("RESULTS")
+            if (changed){
+                await loadSummary(room.id);
+            }
+        }
+        else if (room.current_round != null) {
             setGameState("GUESSING");
 
-            if (room.current_round != 1) {
+            if (room.current_round != 1 && changed) {
                 const { success, message, roundInfo } = await GetRound(room.id);
                 if (!success) {
                     console.error("Round could not be fetched: " + message);
+                    setEntry(null);
                 }
                 else {
                     setEntry(roundInfo?.image ?? null);
                 }
+
+                console.log("refreshed");
+                setImage(null);
+                setGenerating(false);
+                setSubmitted(false);
+                setGuess("");
             }
-        }
-        else if (room.current_round == -1) {
-            setGameState("RESULTS")
         }
         else {
             setGameState("WAITING")
         }
 
         return room;
+    }
+
+    async function loadSummary(roomId: string) {
+        const { success, message, data } = await SummaryRoom(roomId);
+
+        if (!success) {
+            console.error("Summary failed: " + message);
+            return;
+        }
+
+        setSummary(data);
     }
 
     async function roundRoom(roomId: string) {
@@ -190,23 +212,10 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         }
 
         if (isDone) {
-            const { success, message, data } = await SummaryRoom(roomId);
 
-            if (!success) {
-                console.error("Summary failed: " + message);
-                return;
-            }
-
-            setGameState("RESULTS");
-            setSummary(data);
         }
         else {
             await reloadRoom();
-
-            setImage(null);
-            setGenerating(false);
-            setSubmitted(false);
-            setGuess("");
 
             console.log("not done, continue still");
         }
@@ -347,8 +356,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     return (
         <div className="min-h-screen flex flex-col bg-background">
             {/* Header Area */}
-            <GameHeader roomCode={roomId as string} currentRound={currentRound} totalRounds={roomRef.current?.round_count ?? 0} timeRemaining={remaining} />
-            <h1>{roomRef.current?.room_name}</h1>
+            <GameHeader roomName={roomRef.current?.room_name ?? ""} roomCode={roomId as string} currentRound={currentRound} totalRounds={roomRef.current?.round_count ?? 0} showInfo={gameState === "GUESSING"} timeRemaining={remaining} />
+
             {/* Main Content Area */}
             <div className="flex-1 flex gap-6 p-6 max-w-7xl mx-auto w-full">
                 {/* Left Column - Player List */}
@@ -478,12 +487,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
                     {gameState === "RESULTS" && (
                         <div className="flex items-center justify-center">
-                            {summary && summary.keys().map(round => {
+                            {summary && [...summary.keys()].map(round => {
                                 const entries = summary.get(round);
-
                                 return (
                                     <div className="flex flex-col m-4" key={round}>
-                                        {entries && entries.map((entry, index) => (
+                                        {entries && [...entries].map((entry, index) => (
                                             <div key={index} className="mb-8">
                                                 {entry.prompt && (
                                                     <div className="mb-4">
@@ -492,7 +500,6 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                                                         <Image src={entry.image} alt={`Result ${index + 1}`} width={1000} height={1000} className="rounded-lg border-4 border-primary/20 shadow-lg" />
                                                     </div>
                                                 )}
-                                                { }
                                             </div>
                                         ))}
                                     </div>
