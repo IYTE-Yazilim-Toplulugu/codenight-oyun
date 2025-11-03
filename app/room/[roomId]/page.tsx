@@ -25,6 +25,7 @@ import { configure, generateImage } from "@/lib/util/fal";
 import GetRound from "@/app/api/round/get";
 import SummaryRoom from "@/app/api/room/summary";
 import { MRoundEntry } from "@/lib/models/Round";
+import getEntryNumber from "@/lib/util/room";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -75,7 +76,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     const [remaining, setRemaining] = useState<number>(-1);
     const [gameState, setGameState] = useState<GameState>("WAITING");
     const [currentRound, setCurrentRound] = useState<number>(0)
-    const [summary, setSummary] = useState<Map<number, MRoundEntry[]> | null>();
+    const [summary, setSummary] = useState<Map<number, (MRoundEntry & { players: {player_number:number, users: {username:string}} })[]> | null>();
 
     const [entry, setEntry] = useState<string | null>(null);
     const [image, setImage] = useState<string | null>(null);
@@ -488,7 +489,17 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                     {gameState === "RESULTS" && (
                         <div className="flex items-center justify-center">
                             {summary && [...summary.keys()].map(round => {
-                                const entries = summary.get(round);
+                                const entries_ = summary.get(round);
+
+                                const totalRounds = roomRef.current?.round_count ?? 0;
+                                let entries = [...entries_!];
+                                if (round == 1){
+                                    entries.sort((a, b) => a.round_id - b.round_id);
+                                }
+                                else{
+                                    entries.sort((a, b) => getEntryNumber(a.players.player_number, a.round_id, totalRounds) - getEntryNumber(b.players.player_number, b.round_id, totalRounds));
+                                }
+
                                 return (
                                     <div className="flex flex-col m-4" key={round}>
                                         {entries && [...entries].map((entry, index) => (
@@ -496,6 +507,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                                                 {entry.prompt && (
                                                     <div className="mb-4">
                                                         <h3 className="text-xl font-semibold mb-2">Prompt: {entry.prompt}</h3>
+                                                        <h3>Round: {entry.round_id}</h3>
+                                                        <h3>Author: {entry.players.users.username} ({entry.players.player_number})</h3>
                                                         <h3>Result: </h3>
                                                         <Image src={entry.image} alt={`Result ${index + 1}`} width={1000} height={1000} className="rounded-lg border-4 border-primary/20 shadow-lg" />
                                                     </div>

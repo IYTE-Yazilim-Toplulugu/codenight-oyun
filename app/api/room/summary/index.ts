@@ -34,7 +34,7 @@ export default async function SummaryRoom(roomId: string) {
     }
 
     const { error, data } = await supabase.from("round_entries")
-        .select<"*", MRoundEntry>()
+        .select("*, players (player_number, users (username))")
         .eq("room_id", dataFetch.id)
         .order("created_at");
 

@@ -4,19 +4,10 @@ import {getUserIdFromCookie} from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
 import {MRoom} from "@/lib/models/Room";
 import {getUTCDate} from "@/lib/utils";
+import getEntryNumber from "@/lib/util/room";
 
-function getNextRoundNumber(playerNumber: number, totalRounds: number): number {
-    let num = playerNumber - 1;
-
-    if (num <= 0){
-        num = totalRounds;
-    }
-
-    return num;
-}
-
-async function pullNextEntry(playerNumber: number, room: MRoom){
-    const pullPlayerNumber = getNextRoundNumber(playerNumber, room.round_count!);
+async function pullNextEntry(playerNumber: number, currentRound: number, room: MRoom){
+    const pullPlayerNumber = getEntryNumber(playerNumber, currentRound, room.round_count!);
 
     const { error: errorEntryFetch, data: dataEntry } = await getEntry(room.id, room.current_round! - 1, pullPlayerNumber);
 
@@ -29,9 +20,9 @@ async function pullNextEntry(playerNumber: number, room: MRoom){
     }
 
     if (dataEntry == null){
-        const otherNum = getNextRoundNumber(pullPlayerNumber, room.round_count!);
+        const otherNum = getEntryNumber(pullPlayerNumber, currentRound, room.round_count!);
 
-        return await pullNextEntry(otherNum, room);
+        return await pullNextEntry(otherNum, currentRound, room);
     }
 
     return {
@@ -109,7 +100,7 @@ export default async function GetRound(roomId: string){
         };
     }
 
-    const { success: entryPullSuccess, entry, error: entryPullError } = await pullNextEntry(playerNumber, dataRoom);
+    const { success: entryPullSuccess, entry, error: entryPullError } = await pullNextEntry(playerNumber, dataRoom.current_round, dataRoom);
 
     return {
         success: entryPullSuccess,
