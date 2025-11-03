@@ -1,5 +1,5 @@
 "use client"
-import {useState, useEffect, useRef} from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import { floor } from "@floating-ui/utils";
@@ -24,7 +24,7 @@ import { toast } from "@/lib/hooks/toastHooks";
 import { configure, generateImage } from "@/lib/util/fal";
 import GetRound from "@/app/api/round/get/page";
 import SummaryRoom from "@/app/api/room/summary/page";
-import {MRoundEntry} from "@/lib/models/Round";
+import { MRoundEntry } from "@/lib/models/Round";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -82,6 +82,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     const [submitted, setSubmitted] = useState<boolean>(false);
     const [generating, setGenerating] = useState<boolean>(false);
     const [guess, setGuess] = useState("")
+    const [currentResult, setCurrentResult] = useState<number | null>(null);
 
     const { roomId } = useParams()
 
@@ -149,12 +150,12 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         if (room.current_round != null) {
             setGameState("GUESSING");
 
-            if (room.current_round != 1){
+            if (room.current_round != 1) {
                 const { success, message, roundInfo } = await GetRound(room.id);
-                if (!success){
+                if (!success) {
                     console.error("Round could not be fetched: " + message);
                 }
-                else{
+                else {
                     setEntry(roundInfo?.image ?? null);
                 }
             }
@@ -188,7 +189,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             return;
         }
 
-        if (isDone){
+        if (isDone) {
             const { success, message, data } = await SummaryRoom(roomId);
 
             if (!success) {
@@ -199,7 +200,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             setGameState("RESULTS");
             setSummary(data);
         }
-        else{
+        else {
             await reloadRoom();
 
             setImage(null);
@@ -329,10 +330,10 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             room_id: roomRef.current.id
         });
 
-        if (success){
+        if (success) {
             setSubmitted(true);
         }
-        else{
+        else {
             toast({
                 title: "Submission Failed",
                 description: "There was an error submitting your entry. Please try again.",
@@ -409,8 +410,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                             <div className="w-full max-w-2xl space-y-6">
                                 <h3 className="text-2xl font-bold text-center text-foreground mb-6">{image ? "What do you see?" : "We are waiting your prompt..."}</h3>
                                 <div className="rounded-2xl overflow-hidden border-4 border-primary/20 shadow-lg">
-                                    { entry && <Image src={entry} alt="image-guess" width={1080}  height={1080} className={"aspect-square"}/> }
-                                    { image && <Image src={image} alt="image-guess" width={1080}  height={1080} className={"aspect-square"}/> }
+                                    {entry && <Image src={entry} alt="image-guess" width={1080} height={1080} className={"aspect-square"} />}
+                                    {image && <Image src={image} alt="image-guess" width={1080} height={1080} className={"aspect-square"} />}
                                 </div>
                             </div>
                         )}
@@ -477,15 +478,26 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
                     {gameState === "RESULTS" && (
                         <div className="flex items-center justify-center">
-                            { summary && summary.keys().map(round => {
+                            {summary && summary.keys().map(round => {
                                 const entries = summary.get(round);
 
                                 return (
-                                    <div>
-
+                                    <div className="flex flex-col m-4" key={round}>
+                                        {entries && entries.map((entry, index) => (
+                                            <div key={index} className="mb-8">
+                                                {entry.prompt && (
+                                                    <div className="mb-4">
+                                                        <h3 className="text-xl font-semibold mb-2">Prompt: {entry.prompt}</h3>
+                                                        <h3>Result: </h3>
+                                                        <Image src={entry.image} alt={`Result ${index + 1}`} width={1000} height={1000} className="rounded-lg border-4 border-primary/20 shadow-lg" />
+                                                    </div>
+                                                )}
+                                                { }
+                                            </div>
+                                        ))}
                                     </div>
                                 );
-                            }) }
+                            })}
                         </div>
                     )}
                 </div>

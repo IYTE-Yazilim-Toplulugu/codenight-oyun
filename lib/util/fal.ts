@@ -1,6 +1,6 @@
 import { ApiError, fal, QueueStatus } from "@fal-ai/client";
 
-const endpoint = "fal-ai/imagen4/preview/fast";
+const endpoint = "fal-ai/flux/dev";
 
 export function configure(apiKey: string) {
     fal.config({
@@ -12,7 +12,7 @@ export async function checkApiKey(apiKey: string) {
     try {
 
         configure(apiKey);
-        await fal.queue.status(endpoint, { requestId: "furkanigotten" });
+        await fal.queue.status(endpoint, { requestId: "asdasd" });
 
     } catch (e: ApiError<any> | any) {
         return e.status == 404;
