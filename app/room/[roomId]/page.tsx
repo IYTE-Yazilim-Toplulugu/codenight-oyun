@@ -19,6 +19,7 @@ import {MRoundEntry} from "@/lib/models/Round";
 import GetUserID from "@/app/api/user/get/page";
 import StartRoom from "@/app/api/room/start/page";
 import RoundRoom from "@/app/api/room/round/page";
+import {floor} from "@floating-ui/utils";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -52,6 +53,18 @@ async function fetchPlayers(roomId: string){
 
     return players;
 }
+
+async function fetchRoom(){
+    const { success, message, room } = await GetRoom();
+
+    if (!success){
+        console.error("Room fetch failed: ", message);
+        return null;
+    }
+
+    return room;
+}
+
 async function roundRoom(roomCode: string){
     const { success, message, isDone } = await RoundRoom(roomCode);
 
@@ -66,7 +79,7 @@ async function roundRoom(roomCode: string){
 }
 
 export default function GameRoomPage({ params }: RoomPageProps) {
-    const [room, setRoom] = useState<(MRoom & { round_remaining: number | null }) | null>();
+    const [room, setRoom] = useState<MRoom | null>();
     const [players, setPlayers] = useState<PlayerMeta[] | null>();
     const [remaining, setRemaining] = useState<number>(0);
     const [gameState, setGameState] = useState<GameState>("WAITING");
@@ -87,7 +100,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             return -2;
         }
 
-        return (room.round_ends_at.getTime() - Date.now()) / 1000.0;
+        return floor((room.round_ends_at.getTime() - Date.now()) / 1000);
     }
 
     async function handleStartRoom(){
@@ -112,13 +125,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
         GetUserID().then(setUserId);
 
-        GetRoom().then(x => {
-            if (!x.success){
-                console.error("Room fetch failed: ", x.message);
-                return;
-            }
-
-            const room = x.room;
+        fetchRoom().then(room => {
             setRoom(room);
 
             if (!room){
@@ -154,6 +161,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             console.log("wide interval tick");
             if (room == null)
                 return;
+
+            if (room.current_round == null){
+                const newRoom = await fetchRoom();
+                setRoom(newRoom);
+            }
 
             console.log("wide interval room accepted");
 

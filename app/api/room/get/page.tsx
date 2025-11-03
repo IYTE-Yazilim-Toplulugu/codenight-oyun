@@ -19,10 +19,7 @@ export default async function GetRoom() {
         return {
             success: data != null,
             message: data ? "OK" : error?.message || "Unknown error",
-            room: data ? {
-                ...data,
-                round_remaining: data.round_ends_at == null ? null : (data.round_ends_at.getTime() - Date.now())/1000,
-            } : null
+            room: data ? data : null
         }
     }
 
