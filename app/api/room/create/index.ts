@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 import { supabaseInsert } from "@/lib/api/supabase";
 import { MRoom, MRoomSchema, RoomCreatePayload } from "@/lib/models/Room";
 import { getUserIdFromCookie } from "@/lib/util/auth";
-import CreatePlayer from "../../player/create/page";
+import CreatePlayer from "../../player/create";
 
 const POSSIBLE_KEY_CHARS = "ABCDEFGHIJKLMNPRSTUVYZQWX23456789";
 const KEY_LENGTH = 8;

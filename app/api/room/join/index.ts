@@ -2,7 +2,7 @@
 import { MRoomSchema, RoomCode, RoomJoinPayload } from "@/lib/models/Room";
 import { getUserIdFromCookie } from "@/lib/util/auth";
 import { supabaseFetcherSingle, supabaseUpdate } from "@/lib/api/supabase";
-import CreatePlayer from "../../player/create/page";
+import CreatePlayer from "../../player/create";
 
 const ROOM_MAX_PLAYERS = 10;
 

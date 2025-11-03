@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseFetcherSingle } from "@/lib/api/supabase";
-import {GetPlayer, GetPlayerMeta, GetPlayers, PlayerMeta} from "../../player/get/page";
+import {GetPlayer, GetPlayerMeta, GetPlayers, PlayerMeta} from "../../player/get";
 import { MRoom, MRoomSchema, RoomGetPayload } from "@/lib/models/Room";
 import { MPlayer } from "@/lib/models/Player";
 import {getUTCDate} from "@/lib/utils";

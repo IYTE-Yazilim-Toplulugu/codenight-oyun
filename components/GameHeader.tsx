@@ -1,7 +1,7 @@
 "use client"
 import { Clock, Users } from "lucide-react"
 import { Button } from "./ui/button"
-import DeletePlayer from "@/app/api/player/delete/page"
+import DeletePlayer from "@/app/api/player/delete"
 import { toast } from "@/lib/hooks/toastHooks"
 import { useRouter } from "next/navigation"
 

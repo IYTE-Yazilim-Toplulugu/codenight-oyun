@@ -4,7 +4,7 @@ The page must be a Client Component (`"use client";`) as it will manage a `gameS
 
 Create the following page and components:
 
-1.  **Page: Game Room (`app/room/[roomId]/page.tsx`)**
+1.  **Page: Game Room (`app/room/[roomId]/index.ts`)**
     * This page will use a CSS Grid or Flexbox layout to create three distinct areas: Header, Main Content, and Input Footer.
     * **Header Area (Top):**
         * This area should span the full width at the top.

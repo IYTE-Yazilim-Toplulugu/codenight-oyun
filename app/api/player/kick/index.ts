@@ -1,15 +1,15 @@
 "use server"
 import { PlayerKickPayload } from "@/lib/models/Player";
 import { supabaseDelete } from "@/lib/api/supabase";
-import { GetPlayer } from "../get/page";
-import { GetFullRoom } from "../../room/get/page";
+import { GetPlayer } from "../get";
+import { GetFullRoom } from "../../room/get";
 
 /**
- * Kick a player associated with the the user which admin has choosed.
+ * Kick a player associated with the user which admin has choosed.
  *
  * @return An object indicating success status and message.
  */
-export default async function KickPlayer(user_id: string) {
+export async function KickPlayer(user_id: string) {
 
     const { success, message, player } = await GetPlayer();
 

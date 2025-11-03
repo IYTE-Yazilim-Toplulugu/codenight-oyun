@@ -12,18 +12,18 @@ import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { GetFullRoom } from "@/app/api/room/get/page";
-import { GetPlayerMeta, PlayerMeta } from "@/app/api/player/get/page";
-import EntryRound from "@/app/api/round/entry/page";
-import GetUserID from "@/app/api/user/get/page";
-import StartRoom from "@/app/api/room/start/page";
-import RoundRoom from "@/app/api/room/round/page";
-import KickPlayer from "@/app/api/player/kick/page"
+import { GetFullRoom } from "@/app/api/room/get";
+import { GetPlayerMeta, PlayerMeta } from "@/app/api/player/get";
+import EntryRound from "@/app/api/round/entry";
+import GetUserID from "@/app/api/user/get";
+import StartRoom from "@/app/api/room/start";
+import RoundRoom from "@/app/api/room/round";
+import {KickPlayer} from "@/app/api/player/kick"
 import { MRoom } from "@/lib/models/Room";
 import { toast } from "@/lib/hooks/toastHooks";
 import { configure, generateImage } from "@/lib/util/fal";
-import GetRound from "@/app/api/round/get/page";
-import SummaryRoom from "@/app/api/room/summary/page";
+import GetRound from "@/app/api/round/get";
+import SummaryRoom from "@/app/api/room/summary";
 import { MRoundEntry } from "@/lib/models/Round";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"

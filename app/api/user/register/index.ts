@@ -4,7 +4,7 @@ import { MUser } from "@/lib/models/User";
 import supabase from "@/lib/api/supabase/supabase";
 import { checkApiKey } from "@/lib/util/fal";
 import { randomInt } from "node:crypto";
-import LoginUser from "../login/page";
+import LoginUser from "../login";
 
 export default async function UserRegister(user: Omit<MUser, "is_admin" | "admin_pass" | "id" | "avatar">) {
     const status = await checkApiKey(user.api_key);

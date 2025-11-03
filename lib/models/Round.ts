@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ROUND_TIMESPAN = 45 * 1000; // 75 seconds
+export const ROUND_TIMESPAN = 50 * 1000; // 75 seconds
 
 export const MRoundEntrySchema = z.object({
     id: z.uuidv4(),

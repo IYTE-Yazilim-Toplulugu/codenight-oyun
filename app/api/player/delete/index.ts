@@ -3,7 +3,7 @@ import { getUserIdFromCookie } from "@/lib/util/auth";
 import { PlayerDeletePayload } from "@/lib/models/Player";
 import { supabaseDelete, supabaseUpdate } from "@/lib/api/supabase";
 import { MRoomSchema } from "@/lib/models/Room";
-import GetRoom from "../../room/get/page";
+import GetRoom from "../../room/get";
 
 /**
  * Deletes a player associated with the current user.
