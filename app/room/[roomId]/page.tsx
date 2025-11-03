@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect} from "react"
 import { useParams } from "next/navigation"
 
 import { Loader2 } from "lucide-react"
@@ -12,10 +12,12 @@ import { Textarea } from "@/components/ui/textarea"
 import {MRoom} from "@/lib/models/Room";
 import {GetFullRoom} from "@/app/api/room/get/page";
 import {GetPlayerMeta, PlayerMeta} from "@/app/api/player/get/page";
+import { GetPlayer } from "@/app/api/player/get/page"
 import EntryRound from "@/app/api/round/entry/page";
 import {configure, generateImage} from "@/lib/util/fal";
 import Cookie from "js-cookie";
 import {MRoundEntry} from "@/lib/models/Round";
+import { getUserIdFromCookie } from "@/lib/util/auth"
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -23,6 +25,12 @@ type RoomPageProps = {
     params: {
         roomId: string; // This 'roomId' must match the folder name [roomId]
     }
+};
+
+type Player = {
+  user_id: string;
+  room_id: string;
+  player_number: number;
 };
 
 async function submit(prompt: string, roomId: string, image: string){
@@ -50,13 +58,24 @@ async function fetchPlayers(roomId: string){
     return players;
 }
 
+async function fetchMyPlayer(){
+    const { success, message, player } = await GetPlayer();
+
+    if (!success){
+        console.error("Player fetch failed: ", message);
+        return;
+    }
+
+    return player;
+}
+
 export default function GameRoomPage({ params }: RoomPageProps) {
     const [room, setRoom] = useState<MRoom | null>();
     const [players, setPlayers] = useState<PlayerMeta[] | null>();
     const [remaining, setRemaining] = useState<number>(0);
     const [gameState, setGameState] = useState<GameState>("WAITING");
     const [entry, setEntry] = useState<MRoundEntry | null>();
-
+    const [playerData, setPlayerData] = useState<Player | null>(null)
     const [image, setImage] = useState<string | null>(null);
     const [submitted, setSubmitted] = useState<boolean>(false);
     const [guess, setGuess] = useState("")
@@ -72,6 +91,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
         return (room.round_ends_at.getTime() - Date.now()) / 1000.0;
     }
+    
 
     useEffect(() => {
         if (apiKey){
@@ -108,6 +128,16 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         return () => window.clearInterval(timer);
     })
 
+    useEffect(()=>{
+        const fan = async () => {
+            const playerData = await fetchMyPlayer();
+            setPlayerData(playerData ?? null);
+        }
+
+        fan();
+    },[])
+
+
     useEffect(() => {
         const timer = window.setInterval(async () => {
             if (room == null)
@@ -132,8 +162,16 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             setGameState(remaining <= 0 ? "RESULTS" : "GUESSING");
         }, 5000);
 
-        return () => window.clearInterval(timer);
-    })
+        setInterval(async () => {
+            if (room == null)
+                return;
+
+            const r = getRemainingTime();
+
+            if (r >= 0)
+                setRemaining(r);
+        }, 1000);
+    }, )
 
     const handleSubmitGuess = async () => {
         const finalGuess = guess.trim();
@@ -203,11 +241,24 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             <footer className="border-t-4 border-primary/20 bg-card">
                 <div className="max-w-7xl mx-auto px-6 py-6">
                     {gameState === "WAITING" && (
-                        <div className="flex items-center justify-center gap-4 opacity-50">
-                            <Textarea placeholder="Your guess will appear here..." disabled className="max-w-2xl rounded-xl" />
-                            <Button size="lg" disabled className="rounded-xl px-8">
-                                Submit
-                            </Button>
+                        <div className="flex flex-row items-center justify-center gap-4">
+                            <div className="opacity-50">
+                                <Textarea placeholder="Your guess will appear here..." disabled className="max-w-2xl rounded-xl" />
+                            </div>
+                            <div>
+                                <Button size="lg" disabled className="rounded-xl px-8">
+                                    Submit
+                                </Button>
+                            </div>
+                            {playerData && room?.creator_id === playerData.user_id && (
+                            <div>
+                                <Button size="lg" 
+                                className="rounded-xl"
+                      //          onClick={handleStartGame}
+                                >
+                                    Start the game!
+                                </Button>
+                            </div>)}
                         </div>
                     )}
 
