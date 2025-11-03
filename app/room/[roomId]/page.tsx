@@ -20,6 +20,7 @@ import GetUserID from "@/app/api/user/get/page";
 import StartRoom from "@/app/api/room/start/page";
 import RoundRoom from "@/app/api/room/round/page";
 import {floor} from "@floating-ui/utils";
+import {getUTCDate} from "@/lib/utils";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -100,7 +101,10 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             return -2;
         }
 
-        return floor((room.round_ends_at.getTime() - Date.now()) / 1000);
+        console.log(room.round_ends_at.getTime());
+        console.log(getUTCDate());
+
+        return floor((room.round_ends_at.getTime() - getUTCDate().getTime()) / 1000);
     }
 
     async function handleStartRoom(){
@@ -177,7 +181,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             }
 
             if (room.creator_id === userId && remaining <= 0 && room.current_round != null){
-                await roundRoom(room.short_code);
+                //await roundRoom(room.short_code);
             }
 
             if (remaining <= 0 && submitted){

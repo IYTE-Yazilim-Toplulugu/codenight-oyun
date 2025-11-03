@@ -3,6 +3,7 @@
 import {getUserIdFromCookie} from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
 import {MRoom} from "@/lib/models/Room";
+import {getUTCDate} from "@/lib/utils";
 
 function getNextRoundNumber(playerNumber: number, totalRounds: number): number {
     let num = playerNumber - 1;
@@ -69,7 +70,7 @@ export default async function GetRound(roomCode: string){
         };
     }
 
-    if (!dataRoom || dataRoom.current_round == null || dataRoom.current_round <= 0 || dataRoom.round_ends_at! < new Date()){
+    if (!dataRoom || dataRoom.current_round == null || dataRoom.current_round <= 0 || dataRoom.round_ends_at! < getUTCDate()){
         return {
             success: false,
             message: "Invalid room.",

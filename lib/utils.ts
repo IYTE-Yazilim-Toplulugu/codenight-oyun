@@ -12,3 +12,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function getUTCDate(){
+    const date = new Date();
+
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+}

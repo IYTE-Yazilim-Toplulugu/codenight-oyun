@@ -3,6 +3,7 @@ import { getUserIdFromCookie } from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
 import { MRoom } from "@/lib/models/Room";
 import { ROUND_TIMESPAN } from "@/lib/models/Round";
+import {getUTCDate} from "@/lib/utils";
 
 export default async function StartRoom(roomCode: string) {
     const userId = await getUserIdFromCookie();
@@ -37,7 +38,7 @@ export default async function StartRoom(roomCode: string) {
         };
     }
 
-    const currentDate = new Date(Date.now() + ROUND_TIMESPAN);
+    const currentDate = new Date(getUTCDate().getTime() + ROUND_TIMESPAN);
 
     const { error: errorUpdate } = await supabase.from("rooms")
         .update({

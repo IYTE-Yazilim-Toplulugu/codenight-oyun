@@ -3,6 +3,7 @@
 import {getUserIdFromCookie} from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
 import {ROUND_TIMESPAN} from "@/lib/models/Round";
+import {getUTCDate} from "@/lib/utils";
 
 export default async function RoundRoom(roomCode: string) {
     const userId = await getUserIdFromCookie();
@@ -26,7 +27,7 @@ export default async function RoundRoom(roomCode: string) {
         };
     }
 
-    if (!dataFetch || dataFetch.current_round == null || dataFetch.round_ends_at > new Date()) {
+    if (!dataFetch || dataFetch.current_round == null || dataFetch.round_ends_at > getUTCDate()) {
         return {
             success: false,
             message: "Invalid room.",
@@ -38,7 +39,7 @@ export default async function RoundRoom(roomCode: string) {
 
     const { error } = await supabase.from("rooms")
         .update({
-            round_ends_at: isDone ? null : new Date(Date.now() + ROUND_TIMESPAN),
+            round_ends_at: isDone ? null : new Date(getUTCDate().getTime() + ROUND_TIMESPAN),
             current_round: isDone ? -1 : dataFetch.current_round + 1,
         }).eq("id", dataFetch.id);
 
