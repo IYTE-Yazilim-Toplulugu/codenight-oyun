@@ -33,7 +33,13 @@ export async function GetPlayers(room: Pick<MRoom, 'id'>) {
     };
 }
 
-export async function GetPlayerMeta(room: Pick<MRoom, 'id'>){
+/**
+ * Retrieves the player metadata associated with the room.
+ *
+ * @param room - The room for which to retrieve player metadata.
+ * @return An object indicating success status, message, and the player metadata if successful.
+ */
+export async function GetPlayerMeta(room: Pick<MRoom, 'id'>) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
