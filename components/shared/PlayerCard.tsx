@@ -9,7 +9,7 @@ export function PlayerCard({ name, num }: PlayerCardProps) {
     const status = "done";
     return (
         <div
-            className={` relative px-4 py-3 rounded-2xl border-2 transition-all 
+            className={` relative px-4 py-3 w-full rounded-2xl border-2 transition-all 
             ${status === "done"
                     ? "bg-success/10 border-success/40"
                     : status === "active"

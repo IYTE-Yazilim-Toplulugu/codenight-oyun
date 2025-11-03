@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 
 import { Loader2 } from "lucide-react"
-
+import { motion, AnimatePresence } from "framer-motion"
 import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,8 @@ import StartRoom from "@/app/api/room/start/page";
 import RoundRoom from "@/app/api/room/round/page";
 import {floor} from "@floating-ui/utils";
 import {getUTCDate} from "@/lib/utils";
+import KickPlayer from "@/app/api/player/kick/page"
+import { includes } from "zod"
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -119,6 +121,17 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         else{
             // toast
             console.error("Room could not be started: ", message);
+        }
+    }
+
+    async function handleKickPlayer(kikcuser_id : string) {
+        
+        const { success, message, player} = await KickPlayer(kikcuser_id);
+
+        if(success) {
+            return;
+        }else{
+            console.error("Player couldn't kicked.", message);
         }
     }
 
@@ -226,17 +239,56 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             {/* Main Content Area */}
             <div className="flex-1 flex gap-6 p-6 max-w-7xl mx-auto w-full">
                 {/* Left Column - Player List */}
-                <aside className="w-64 flex-shrink-0">
-                    <div className="bg-card rounded-2xl border-2 border-border p-4 shadow-sm sticky top-6">
-                        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                            Players
-                        </h2>
-                        <div className="space-y-3">
-                            {players && players.map((player) => <PlayerCard key={player.users.id} name={player.users.username} num={player.player_number} />)}
-                        </div>
+            <aside className="w-64 flex-shrink-0">
+                <div className="bg-card rounded-2xl border-2 border-border p-4 shadow-sm sticky top-6">
+                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    Players
+                    </h2>
+
+                    <div className="space-y-3">
+                        {players &&
+                        players.map((player) => (
+                            <motion.div
+                            key={player.users.id}
+                            className="relative flex items-center justify-between bg-muted/40 p-2 rounded-xl overflow-hidden"
+                            whileHover="hovered"
+                            initial="initial"
+                            >
+                            {/* Sol taraf: Player bilgisi */}
+                            <PlayerCard
+                                name={player.users.username}
+                                num={player.player_number}
+                            />
+
+                            {/* Sağ taraf: Kick butonu */}
+                            {room?.creator_id === userId && (
+                                <AnimatePresence>
+                                <motion.div
+                                    variants={{
+                                    initial: { opacity: 0, x: 40 },
+                                    hovered: { opacity: 1, x: 0 },
+                                    }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                                >
+                                    <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="rounded-xl"
+                                    onClick={() => handleKickPlayer(player.users.id)}
+                                    >
+                                    Kick
+                                    </Button>
+                                </motion.div>
+                                </AnimatePresence>
+                            )}
+                            </motion.div>
+                        ))}
                     </div>
-                </aside>
+                </div>
+            </aside>
+
 
                 {/* Right Column - Image Container */}
                 <main className="flex-1 flex flex-col">
