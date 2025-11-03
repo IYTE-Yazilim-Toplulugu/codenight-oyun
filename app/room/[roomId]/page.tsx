@@ -9,14 +9,14 @@ import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import {MRoom} from "@/lib/models/Room";
-import {GetFullRoom} from "@/app/api/room/get/page";
-import {PlayerMetaPayload} from "@/lib/models/Player";
-import {GetPlayerMeta} from "@/app/api/player/get/page";
+import { MRoom } from "@/lib/models/Room";
+import { GetFullRoom } from "@/app/api/room/get/page";
+import { PlayerMetaPayload } from "@/lib/models/Player";
+import { GetPlayerMeta } from "@/app/api/player/get/page";
 import EntryRound from "@/app/api/round/entry/page";
-import {configure, generateImage} from "@/lib/util/fal";
+import { configure, generateImage } from "@/lib/util/fal";
 import Cookie from "js-cookie";
-import {MRoundEntry} from "@/lib/models/Round";
+import { MRoundEntry } from "@/lib/models/Round";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -26,24 +26,24 @@ type RoomPageProps = {
     }
 };
 
-async function submit(prompt: string, roomId: string, image: string){
+async function submit(prompt: string, roomId: string, image: string) {
     const { success, message } = await EntryRound({
         image: image,
         prompt: prompt,
         room_id: roomId
     });
 
-    if (!success){
+    if (!success) {
         console.error("Submit error: ", message);
     }
 
     return success;
 }
 
-async function fetchPlayers(roomId: string){
-    const { success, message, players } = await GetPlayerMeta({id: roomId});
+async function fetchPlayers(roomId: string) {
+    const { success, message, players } = await GetPlayerMeta({ id: roomId });
 
-    if (!success){
+    if (!success) {
         console.error("Player meta fetch failed: ", message);
         return;
     }
@@ -66,8 +66,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
     const apiKey = Cookie.get("apiKey");
 
-    function getRemainingTime(){
-        if (room == null || room.round_ends_at == null){
+    function getRemainingTime() {
+        if (room == null || room.round_ends_at == null) {
             return -2;
         }
 
@@ -75,21 +75,21 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     }
 
     useEffect(() => {
-        if (apiKey){
+        if (apiKey) {
             configure(apiKey);
         }
 
         GetFullRoom().then(x => {
-            if (!x.success){
+            if (!x.success) {
                 console.error("Room fetch failed: ", x.message);
                 return;
             }
 
             setRoom(room);
-            if (room?.current_round != null){
+            if (room?.current_round != null) {
                 setGameState("GUESSING");
             }
-            fetchPlayers(room!.id).then(setPlayers);
+            fetchPlayers(room.id).then(setPlayers);
         });
 
         setInterval(async () => {
@@ -99,13 +99,13 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             const players = await fetchPlayers(room.id);
             setPlayers(players);
 
-            if (room.current_round == null && gameState != "WAITING"){
+            if (room.current_round == null && gameState != "WAITING") {
                 setGameState("WAITING");
             }
 
-            if (remaining <= 0 && submitted){
+            if (remaining <= 0 && submitted) {
                 const success = await submit(guess, room.id, image!);
-                if (!success){
+                if (!success) {
                     // toast
                 }
 
@@ -134,10 +134,10 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                 console.log(status.status);
             });
 
-            if (image){
+            if (image) {
                 setImage(image);
             }
-            else{
+            else {
                 console.error("Image could not be fetched.");
 
                 // toast

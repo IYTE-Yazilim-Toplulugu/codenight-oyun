@@ -1,4 +1,9 @@
+"use client"
 import { Clock, Users } from "lucide-react"
+import { Button } from "./ui/button"
+import DeletePlayer from "@/app/api/player/delete/page"
+import { toast } from "@/lib/hooks/toastHooks"
+import { useRouter } from "next/navigation"
 
 interface GameHeaderProps {
     roomCode: string
@@ -10,6 +15,8 @@ interface GameHeaderProps {
 export function GameHeader({ roomCode, currentRound, totalRounds, timeRemaining }: GameHeaderProps) {
     const minutes = Math.floor(timeRemaining / 60)
     const seconds = timeRemaining % 60
+
+    const router = useRouter()
 
     return (
         <header className="w-full bg-card border-b-4 border-primary/20 px-6 py-4 rounded-b-2xl shadow-sm">
@@ -35,6 +42,24 @@ export function GameHeader({ roomCode, currentRound, totalRounds, timeRemaining 
                             {minutes}:{seconds.toString().padStart(2, "0")}
                         </span>
                     </div>
+                    <Button
+                        onClick={async () => {
+                            const { success, message } = await DeletePlayer();
+
+                            if (!success) {
+                                toast({
+                                    title: "Could not leave room",
+                                    description: message,
+                                    variant: "destructive",
+                                })
+                                return
+                            }
+
+                            router.push("/join")
+                        }}
+                    >
+                        Leave
+                    </Button>
                 </div>
             </div>
         </header>
