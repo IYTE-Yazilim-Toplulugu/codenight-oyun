@@ -1,7 +1,8 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
+import { floor } from "@floating-ui/utils";
 
 import { Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -11,19 +12,18 @@ import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { MRoom } from "@/lib/models/Room";
 import GetRoom, { GetFullRoom } from "@/app/api/room/get/page";
 import { GetPlayerMeta, PlayerMeta } from "@/app/api/player/get/page";
 import EntryRound from "@/app/api/round/entry/page";
-import { configure, generateImage } from "@/lib/util/fal";
-import { MRoundEntry } from "@/lib/models/Round";
 import GetUserID from "@/app/api/user/get/page";
 import StartRoom from "@/app/api/room/start/page";
 import RoundRoom from "@/app/api/room/round/page";
-import {getUTCDate} from "@/lib/utils";
 import KickPlayer from "@/app/api/player/kick/page"
-import { includes } from "zod"
-import { floor } from "@floating-ui/utils";
+import { MRoom } from "@/lib/models/Room";
+import { MRoundEntry } from "@/lib/models/Round";
+import { toast } from "@/lib/hooks/toastHooks";
+import { configure, generateImage } from "@/lib/util/fal";
+import { getUTCDate } from "@/lib/utils";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -42,6 +42,11 @@ async function submit(prompt: string, roomId: string, image: string) {
 
     if (!success) {
         console.error("Submit error: ", message);
+        toast({
+            title: "Submission Failed",
+            description: "There was an error submitting your entry. Please try again.",
+            variant: "destructive",
+        })
     }
 
     return success;
@@ -52,7 +57,12 @@ async function fetchPlayers(roomId: string) {
 
     if (!success) {
         console.error("Player meta fetch failed: ", message);
-        return null;
+        toast({
+            title: "Player Fetch Failed",
+            description: "There was an error fetching player data. Please try again.",
+            variant: "destructive",
+        })
+        return;
     }
 
     return players;
@@ -63,7 +73,12 @@ async function fetchRoom() {
 
     if (!success) {
         console.error("Room fetch failed: ", message);
-        return null;
+        toast({
+            title: "Room Fetch Failed",
+            description: "There was an error fetching room data. Please try again.",
+            variant: "destructive",
+        })
+        return;
     }
 
     return room;
@@ -74,6 +89,11 @@ async function roundRoom(roomCode: string) {
 
     if (!success) {
         console.error("Rounding room failed: ", message);
+        toast({
+            title: "Round Failed",
+            description: "There was an error progressing to the next round. Please try again.",
+            variant: "destructive",
+        })
         return;
     }
 
@@ -111,28 +131,36 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     }
 
     async function handleStartRoom() {
+
         if (!room) {
             return;
         }
+
         const { success, message } = await StartRoom(room.short_code);
 
-        if (success) {
-            setGameState("GUESSING");
-        }
-        else {
-            // toast
+        if (!success) {
             console.error("Room could not be started: ", message);
+            toast({
+                title: "Start Room Failed",
+                description: "There was an error starting the room. Please try again.",
+                variant: "destructive",
+            })
+            return
         }
+        setGameState("GUESSING");
     }
 
-    async function handleKickPlayer(kikcuser_id : string) {
-        
-        const { success, message, player} = await KickPlayer(kikcuser_id);
+    async function handleKickPlayer(kikcuser_id: string) {
 
-        if(success) {
-            return;
-        }else{
+        const { success, message } = await KickPlayer(kikcuser_id);
+
+        if (!success) {
             console.error("Player couldn't kicked.", message);
+            toast({
+                title: "Kick Failed",
+                description: "There was an error kicking the player. Please try again.",
+                variant: "destructive",
+            })
         }
     }
 
@@ -147,7 +175,12 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             setRoom(room);
 
             if (!room) {
-                console.error("THERE IS NO ROOM");
+                console.error("Room not found.");
+                toast({
+                    title: "Room Not Found",
+                    description: "The specified room could not be found. Please check the room code and try again.",
+                    variant: "destructive",
+                })
                 return;
             }
 
@@ -176,7 +209,6 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
     useEffect(() => {
         const timer = window.setInterval(async () => {
-            console.log("wide interval tick");
             if (room == null)
                 return;
 
@@ -215,8 +247,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
     const handleSubmitGuess = async () => {
         const finalGuess = guess.trim();
+
         if (finalGuess) {
-            console.log("Submitted guess:", finalGuess)
             const image = await generateImage(finalGuess, (status) => {
                 console.log(status.status);
             });
@@ -226,8 +258,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             }
             else {
                 console.error("Image could not be fetched.");
-
-                // toast
+                toast({
+                    title: "Image Generation Failed",
+                    description: "There was an error generating the image. Please try again.",
+                    variant: "destructive",
+                })
             }
         }
     }
@@ -240,55 +275,55 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             {/* Main Content Area */}
             <div className="flex-1 flex gap-6 p-6 max-w-7xl mx-auto w-full">
                 {/* Left Column - Player List */}
-            <aside className="w-64 flex-shrink-0">
-                <div className="bg-card rounded-2xl border-2 border-border p-4 shadow-sm sticky top-6">
-                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    Players
-                    </h2>
+                <aside className="w-64 shrink-0">
+                    <div className="bg-card rounded-2xl border-2 border-border p-4 shadow-sm sticky top-6">
+                        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            Players
+                        </h2>
 
-                    <div className="space-y-3">
-                        {players &&
-                        players.map((player) => (
-                            <motion.div
-                            key={player.users.id}
-                            className="relative flex items-center justify-between bg-muted/40 p-2 rounded-xl overflow-hidden"
-                            whileHover="hovered"
-                            initial="initial"
-                            >
-                            {/* Sol taraf: Player bilgisi */}
-                            <PlayerCard
-                                name={player.users.username}
-                                num={player.player_number}
-                            />
-
-                            {/* Sağ taraf: Kick butonu */}
-                            {room?.creator_id === userId && (
-                                <AnimatePresence>
-                                <motion.div
-                                    variants={{
-                                    initial: { opacity: 0, x: 40 },
-                                    hovered: { opacity: 1, x: 0 },
-                                    }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2"
-                                >
-                                    <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="rounded-xl"
-                                    onClick={() => handleKickPlayer(player.users.id)}
+                        <div className="space-y-3">
+                            {players &&
+                                players.map((player) => (
+                                    <motion.div
+                                        key={player.users.id}
+                                        className="relative flex items-center justify-between bg-muted/40 p-2 rounded-xl overflow-hidden"
+                                        whileHover="hovered"
+                                        initial="initial"
                                     >
-                                    Kick
-                                    </Button>
-                                </motion.div>
-                                </AnimatePresence>
-                            )}
-                            </motion.div>
-                        ))}
+                                        {/* Sol taraf: Player bilgisi */}
+                                        <PlayerCard
+                                            name={player.users.username}
+                                            num={player.player_number}
+                                        />
+
+                                        {/* Sağ taraf: Kick butonu */}
+                                        {room?.creator_id === userId && (
+                                            <AnimatePresence>
+                                                <motion.div
+                                                    variants={{
+                                                        initial: { opacity: 0, x: 40 },
+                                                        hovered: { opacity: 1, x: 0 },
+                                                    }}
+                                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                                                >
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        className="rounded-xl"
+                                                        onClick={() => handleKickPlayer(player.users.id)}
+                                                    >
+                                                        Kick
+                                                    </Button>
+                                                </motion.div>
+                                            </AnimatePresence>
+                                        )}
+                                    </motion.div>
+                                ))}
+                        </div>
                     </div>
-                </div>
-            </aside>
+                </aside>
 
 
                 {/* Right Column - Image Container */}
@@ -298,7 +333,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                             <div className="w-full max-w-2xl space-y-6">
                                 <h3 className="text-2xl font-bold text-center text-foreground mb-6">What do you see?</h3>
                                 <div className="rounded-2xl overflow-hidden border-4 border-primary/20 shadow-lg">
-                                    <img src="/placeholder.svg?height=400&width=600" alt="Image to guess" className="w-full h-auto" />
+                                    <Image src={image} alt="image-guess" className="w-full h-auto" fill />
                                 </div>
                             </div>
                         )}
