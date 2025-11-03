@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect} from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 
 import { Loader2 } from "lucide-react"
@@ -12,12 +12,13 @@ import { Textarea } from "@/components/ui/textarea"
 import {MRoom} from "@/lib/models/Room";
 import {GetFullRoom} from "@/app/api/room/get/page";
 import {GetPlayerMeta, PlayerMeta} from "@/app/api/player/get/page";
-import { GetPlayer } from "@/app/api/player/get/page"
 import EntryRound from "@/app/api/round/entry/page";
 import {configure, generateImage} from "@/lib/util/fal";
 import Cookie from "js-cookie";
 import {MRoundEntry} from "@/lib/models/Round";
-import { getUserIdFromCookie } from "@/lib/util/auth"
+import GetUserID from "@/app/api/user/get/page";
+import StartRoom from "@/app/api/room/start/page";
+import RoundRoom from "@/app/api/room/round/page";
 
 type GameState = "WAITING" | "GUESSING" | "RESULTS"
 
@@ -25,12 +26,6 @@ type RoomPageProps = {
     params: {
         roomId: string; // This 'roomId' must match the folder name [roomId]
     }
-};
-
-type Player = {
-  user_id: string;
-  room_id: string;
-  player_number: number;
 };
 
 async function submit(prompt: string, roomId: string, image: string){
@@ -52,21 +47,22 @@ async function fetchPlayers(roomId: string){
 
     if (!success){
         console.error("Player meta fetch failed: ", message);
-        return;
+        return null;
     }
 
     return players;
 }
-
-async function fetchMyPlayer(){
-    const { success, message, player } = await GetPlayer();
+async function roundRoom(roomCode: string){
+    const { success, message, isDone } = await RoundRoom(roomCode);
 
     if (!success){
-        console.error("Player fetch failed: ", message);
+        console.error("Rounding room failed: ", message);
         return;
     }
 
-    return player;
+    if (!isDone){
+        setTimeout(async () => await roundRoom(roomCode), 1000);
+    }
 }
 
 export default function GameRoomPage({ params }: RoomPageProps) {
@@ -75,10 +71,12 @@ export default function GameRoomPage({ params }: RoomPageProps) {
     const [remaining, setRemaining] = useState<number>(0);
     const [gameState, setGameState] = useState<GameState>("WAITING");
     const [entry, setEntry] = useState<MRoundEntry | null>();
-    const [playerData, setPlayerData] = useState<Player | null>(null)
+
     const [image, setImage] = useState<string | null>(null);
     const [submitted, setSubmitted] = useState<boolean>(false);
     const [guess, setGuess] = useState("")
+
+    const [userId, setUserId] = useState<string | null>(null);
 
     const { roomId } = useParams()
 
@@ -91,12 +89,28 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
         return (room.round_ends_at.getTime() - Date.now()) / 1000.0;
     }
-    
+
+    async function handleStartRoom(){
+        if (!room){
+            return;
+        }
+        const { success, message } = await StartRoom(room.short_code);
+
+        if (success){
+            setGameState("GUESSING");
+        }
+        else{
+            // toast
+            console.error("Room could not be started: ", message);
+        }
+    }
 
     useEffect(() => {
         if (apiKey){
             configure(apiKey);
         }
+
+        GetUserID().then(setUserId);
 
         GetFullRoom().then(x => {
             if (!x.success){
@@ -107,10 +121,15 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             const room = x.room;
             setRoom(room);
 
-            if (room?.current_round != null){
+            if (!room){
+                console.error("THERE IS NO ROOM");
+                return;
+            }
+
+            if (room.current_round != null){
                 setGameState("GUESSING");
             }
-            fetchPlayers(room!.id).then(setPlayers);
+            fetchPlayers(room.id).then(setPlayers);
         });
     }, [])
 
@@ -128,16 +147,6 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         return () => window.clearInterval(timer);
     })
 
-    useEffect(()=>{
-        const fan = async () => {
-            const playerData = await fetchMyPlayer();
-            setPlayerData(playerData ?? null);
-        }
-
-        fan();
-    },[])
-
-
     useEffect(() => {
         const timer = window.setInterval(async () => {
             if (room == null)
@@ -150,6 +159,10 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                 setGameState("WAITING");
             }
 
+            if (room.creator_id === userId && remaining <= 0){
+                //await roundRoom(room.short_code);
+            }
+
             if (remaining <= 0 && submitted){
                 const success = await submit(guess, room.id, image!);
                 if (!success){
@@ -159,19 +172,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
             }
 
-            setGameState(remaining <= 0 ? "RESULTS" : "GUESSING");
+            //setGameState(remaining <= 0 ? "RESULTS" : "GUESSING");
         }, 5000);
 
-        setInterval(async () => {
-            if (room == null)
-                return;
-
-            const r = getRemainingTime();
-
-            if (r >= 0)
-                setRemaining(r);
-        }, 1000);
-    }, )
+        return () => window.clearInterval(timer);
+    })
 
     const handleSubmitGuess = async () => {
         const finalGuess = guess.trim();
@@ -215,20 +220,20 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                 {/* Right Column - Image Container */}
                 <main className="flex-1 flex flex-col">
                     <div className="flex-1 bg-card rounded-2xl border-2 border-border p-8 shadow-sm flex items-center justify-center">
-                        {gameState === "WAITING" && (
-                            <div className="text-center space-y-4">
-                                <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto" />
-                                <h3 className="text-2xl font-bold text-foreground">Waiting for players...</h3>
-                                <p className="text-muted-foreground">The game will start soon!</p>
-                            </div>
-                        )}
-
                         {gameState === "GUESSING" && (
                             <div className="w-full max-w-2xl space-y-6">
                                 <h3 className="text-2xl font-bold text-center text-foreground mb-6">What do you see?</h3>
                                 <div className="rounded-2xl overflow-hidden border-4 border-primary/20 shadow-lg">
                                     <img src="/placeholder.svg?height=400&width=600" alt="Image to guess" className="w-full h-auto" />
                                 </div>
+                            </div>
+                        )}
+
+                        {gameState === "WAITING" && (
+                            <div className="text-center space-y-4">
+                                <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto" />
+                                <h3 className="text-2xl font-bold text-foreground">Waiting for players...</h3>
+                                <p className="text-muted-foreground">The game will start soon!</p>
                             </div>
                         )}
 
@@ -250,11 +255,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                                     Submit
                                 </Button>
                             </div>
-                            {playerData && room?.creator_id === playerData.user_id && (
+                            {room?.creator_id === userId && (
                             <div>
-                                <Button size="lg" 
+                                <Button size="lg"
                                 className="rounded-xl"
-                      //          onClick={handleStartGame}
+                                onClick={handleStartRoom}
                                 >
                                     Start the game!
                                 </Button>

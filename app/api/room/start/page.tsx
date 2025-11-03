@@ -10,13 +10,12 @@ export default async function StartRoom(roomCode: string) {
     if (!userId)
         return {
             success: false,
-            message: "Forbidden",
-            roomCode: null
+            message: "Forbidden"
         };
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")
         .select<"*", MRoom>()
-        .eq("secret_code", roomCode).single();
+        .eq("short_code", roomCode).single();
 
     if (errorFetch) {
         return {
@@ -29,6 +28,12 @@ export default async function StartRoom(roomCode: string) {
         return {
             success: false,
             message: "Room could not be found."
+        };
+    }
+    if (dataFetch.creator_id !== userId){
+        return {
+            success: false,
+            message: "Get the fuck outta here!"
         };
     }
 

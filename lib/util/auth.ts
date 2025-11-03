@@ -17,14 +17,14 @@ export async function getUserIdByApiKey(apiKey: string){
     return {
         success: true,
         message: "OK",
-        userId: data.id,
+        userId: data.id as string,
     };
 }
 
 export async function getUserIdFromCookie(){
     const cks = await cookies();
     if (!cks.has("apiKey"))
-        return false;
+        return null;
 
     const apiKey = cks.get("apiKey")!.value;
 

@@ -59,7 +59,7 @@ export default async function GetRound(roomCode: string){
         };
 
     const { data: dataRoom, error: errorRoomFetch } = await supabase.from("rooms")
-        .select<"*", MRoom>().eq("secret_code", roomCode).single();
+        .select<"*", MRoom>().eq("short_code", roomCode).single();
 
     if (errorRoomFetch){
         return {

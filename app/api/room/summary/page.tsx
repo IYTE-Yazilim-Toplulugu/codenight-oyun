@@ -15,7 +15,7 @@ export default async function SummaryRoom(roomCode: string) {
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")
         .select("current_round,round_count,id")
-        .eq("secret_code", roomCode).single();
+        .eq("short_code", roomCode).single();
 
     if (errorFetch) {
         return {

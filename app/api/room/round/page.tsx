@@ -16,7 +16,7 @@ export default async function RoundRoom(roomCode: string) {
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")
         .select("round_ends_at,current_round,round_count,id")
-        .eq("secret_code", roomCode).single();
+        .eq("short_code", roomCode).single();
 
     if (errorFetch){
         return {
