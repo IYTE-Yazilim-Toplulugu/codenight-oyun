@@ -9,25 +9,31 @@ import { GetFullRoom } from "../../room/get";
  *
  * @return An object indicating success status and message.
  */
-export async function KickPlayer(user_id: string) {
+export async function KickPlayer(userId: string) {
 
     const { success, message, player } = await GetPlayer();
 
     if (!success) {
         return {
-            success : success,
-            message : message,
-            player : null,
+            success : false,
+            message : "Error while getting player: " + message,
+        }
+    }
+
+    if (player?.user_id === userId){
+        return {
+            success : false,
+            message : "You cannot kick yourself man :)"
         }
     }
 
     const playerKickPayload: PlayerKickPayload = {
-    user_id: user_id,
+        user_id: userId,
     }
 
     const { room } = await GetFullRoom();
 
-    const  kickedUser = room?.players?.find((p) => p.users.id === user_id)
+    const kickedUser = room?.players?.find((p) => p.users.id === userId)
 
     if (player?.player_number === 1 && kickedUser) {
 

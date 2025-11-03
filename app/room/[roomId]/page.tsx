@@ -116,9 +116,9 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         setGameState("GUESSING");
     }
 
-    async function handleKickPlayer(kikcuser_id: string) {
+    async function handleKickPlayer(userId: string) {
 
-        const { success, message } = await KickPlayer(kikcuser_id);
+        const { success, message } = await KickPlayer(userId);
 
         if (!success) {
             console.error("Player couldn't kicked.", message);
@@ -385,7 +385,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                                         />
 
                                         {/* Sağ taraf: Kick butonu */}
-                                        {roomRef.current?.creator_id === userIdRef.current && (
+                                        {/*roomRef.current?.creator_id === userIdRef.current && player.users.id !== userIdRef.current && (
                                             <AnimatePresence>
                                                 <motion.div
                                                     variants={{
@@ -393,19 +393,19 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                                                         hovered: { opacity: 1, x: 0 },
                                                     }}
                                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2"
                                                 >
                                                     <Button
                                                         size="sm"
                                                         variant="destructive"
-                                                        className="rounded-xl"
+                                                        className="rounded-l-md"
                                                         onClick={() => handleKickPlayer(player.users.id)}
                                                     >
                                                         Kick
                                                     </Button>
                                                 </motion.div>
                                             </AnimatePresence>
-                                        )}
+                                        )*/}
                                     </motion.div>
                                 ))}
                         </div>

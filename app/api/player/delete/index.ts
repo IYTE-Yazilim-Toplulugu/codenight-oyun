@@ -10,16 +10,18 @@ import GetRoom from "../../room/get";
  *
  * @return An object indicating success status and message.
  */
-export default async function DeletePlayer() {
+export default async function DeletePlayer(userId?: string) {
 
-    const userId = await getUserIdFromCookie();
+    const localUserId = await getUserIdFromCookie();
 
-    if (!userId)
+    if (!localUserId)
         return {
             success: false,
             message: "Forbidden",
             roomCode: null
         };
+
+    userId ??= localUserId;
 
     const playerDeletePayload: PlayerDeletePayload = {
         user_id: userId,
