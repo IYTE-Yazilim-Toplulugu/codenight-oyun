@@ -12,7 +12,7 @@ import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import GetRoom, { GetFullRoom } from "@/app/api/room/get/page";
+import GetRoom, {GetFullRoom} from "@/app/api/room/get/page";
 import { GetPlayerMeta, PlayerMeta } from "@/app/api/player/get/page";
 import EntryRound from "@/app/api/round/entry/page";
 import GetUserID from "@/app/api/user/get/page";
@@ -62,14 +62,14 @@ async function fetchPlayers(roomId: string) {
             description: "There was an error fetching player data. Please try again.",
             variant: "destructive",
         })
-        return;
+        return null;
     }
 
     return players;
 }
 
 async function fetchRoom() {
-    const { success, message, room } = await GetRoom();
+    const { success, message, room } = await GetFullRoom();
 
     if (!success) {
         console.error("Room fetch failed: ", message);
@@ -78,7 +78,7 @@ async function fetchRoom() {
             description: "There was an error fetching room data. Please try again.",
             variant: "destructive",
         })
-        return;
+        return null;
     }
 
     return room;
@@ -121,11 +121,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
     function getRemainingTime() {
         if (room == null || room.round_ends_at == null) {
-            return -2;
+            return -1;
         }
-
-        console.log(room.round_ends_at.getTime());
-        console.log(getUTCDate());
 
         return floor((room.round_ends_at.getTime() - getUTCDate().getTime()) / 1000);
     }
@@ -164,6 +161,34 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         }
     }
 
+    async function reloadRoom(){
+        const room = await fetchRoom();
+        setRoom(room);
+        setPlayers(room?.players);
+
+        if (!room) {
+            console.error("Room could not be found.");
+            toast({
+                title: "Room Not Found",
+                description: "The specified room could not be found. Please check the room code and try again.",
+                variant: "destructive",
+            })
+            return null;
+        }
+
+        if (room.current_round != null) {
+            setGameState("GUESSING");
+        }
+        else if (room.current_round == -1){
+            setGameState("RESULTS")
+        }
+        else{
+            setGameState("WAITING")
+        }
+
+        return room;
+    }
+
     useEffect(() => {
         if (apiKey) {
             configure(apiKey);
@@ -171,24 +196,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
         GetUserID().then(setUserId);
 
-        fetchRoom().then(room => {
-            setRoom(room);
-
-            if (!room) {
-                console.error("Room not found.");
-                toast({
-                    title: "Room Not Found",
-                    description: "The specified room could not be found. Please check the room code and try again.",
-                    variant: "destructive",
-                })
-                return;
-            }
-
-            if (room.current_round != null) {
-                setGameState("GUESSING");
-            }
-            fetchPlayers(room.id).then(setPlayers);
-        });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        reloadRoom().then();
     }, [])
 
     useEffect(() => {
@@ -200,8 +209,12 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
             if (r >= 0)
                 setRemaining(r);
-            else if (remaining != 0)
+            else{
                 setRemaining(0);
+
+                if (r < 0)
+                    console.log("Remaining is below zero: ", r);
+            }
         }, 1000);
 
         return () => window.clearInterval(timer);
@@ -212,34 +225,31 @@ export default function GameRoomPage({ params }: RoomPageProps) {
             if (room == null)
                 return;
 
-            if (room.current_round == null) {
-                const newRoom = await fetchRoom();
-                setRoom(newRoom);
+            const isDone = remaining <= 0 && submitted;
+
+            let hereRoom = room;
+
+            if (hereRoom.current_round == null || isDone) {
+                const r = await reloadRoom();
+                if (r == null)
+                    return;
+                hereRoom = r;
+            }
+            else{
+                const players = await fetchPlayers(hereRoom.id);
+                setPlayers(players);
             }
 
-            console.log("wide interval room accepted");
-
-            const players = await fetchPlayers(room.id);
-            setPlayers(players);
-
-            if (room.current_round == null && gameState != "WAITING") {
-                setGameState("WAITING");
-            }
-
-            if (room.creator_id === userId && remaining <= 0 && room.current_round != null) {
+            if (hereRoom.creator_id === userId && remaining <= 0 && hereRoom.current_round != null) {
                 //await roundRoom(room.short_code);
             }
 
-            if (remaining <= 0 && submitted) {
-                const success = await submit(guess, room.id, image!);
+            if (isDone) {
+                const success = await submit(guess, hereRoom.id, image!);
                 if (!success) {
                     // toast
                 }
-
-
             }
-
-            //setGameState(remaining <= 0 ? "RESULTS" : "GUESSING");
         }, 5000);
 
         return () => window.clearInterval(timer);
@@ -333,7 +343,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                             <div className="w-full max-w-2xl space-y-6">
                                 <h3 className="text-2xl font-bold text-center text-foreground mb-6">What do you see?</h3>
                                 <div className="rounded-2xl overflow-hidden border-4 border-primary/20 shadow-lg">
-                                    <Image src={image} alt="image-guess" className="w-full h-auto" fill />
+                                    <Image src={image ?? ""} alt="image-guess" className="w-full h-auto" fill />
                                 </div>
                             </div>
                         )}

@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseFetcherSingle } from "@/lib/api/supabase";
-import { GetPlayer, GetPlayers } from "../../player/get/page";
+import {GetPlayer, GetPlayerMeta, GetPlayers, PlayerMeta} from "../../player/get/page";
 import { MRoom, MRoomSchema, RoomGetPayload } from "@/lib/models/Room";
 import { MPlayer } from "@/lib/models/Player";
 
@@ -56,7 +56,15 @@ export async function GetFullRoom() {
         };
     }
 
-    const resultPlayers = await GetPlayers({ id: player.room_id });
+    if (!data){
+        return {
+            success: false,
+            message: "Room could not be found.",
+            room: null
+        };
+    }
+
+    const resultPlayers = await GetPlayerMeta({ id: player.room_id });
 
     if (!resultPlayers.success) {
         return {
@@ -66,9 +74,9 @@ export async function GetFullRoom() {
         };
     }
 
-    const fullRoom: MRoom & { players: MPlayer[] | null } = {
+    const fullRoom: (MRoom & { players: PlayerMeta[] | null }) = {
         ...data,
-        players: resultPlayers?.players || null
+        players: resultPlayers?.players
     };
 
     return {
