@@ -3,7 +3,7 @@ import { getUserIdFromCookie } from "@/lib/util/auth";
 import supabase from "@/lib/api/supabase/supabase";
 import { MRoundEntry } from "@/lib/models/Round";
 
-export default async function SummaryRoom(roomCode: string) {
+export default async function SummaryRoom(roomId: string) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -15,7 +15,7 @@ export default async function SummaryRoom(roomCode: string) {
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")
         .select("current_round,round_count,id")
-        .eq("short_code", roomCode).single();
+        .eq("id", roomId).single();
 
     if (errorFetch) {
         return {
@@ -33,7 +33,7 @@ export default async function SummaryRoom(roomCode: string) {
         };
     }
 
-    const { error, data } = await supabase.from("room_entries")
+    const { error, data } = await supabase.from("round_entries")
         .select<"*", MRoundEntry>()
         .eq("room_id", dataFetch.id)
         .order("created_at");
@@ -46,9 +46,11 @@ export default async function SummaryRoom(roomCode: string) {
         };
     }
 
+    const value = Map.groupBy(data, (item, index) => item.round_id);
+
     return {
         success: true,
         message: "OK",
-        data: Object.groupBy(data, (item, index) => item.round_id)
+        data: value
     };
 }

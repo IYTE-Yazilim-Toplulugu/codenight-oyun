@@ -4,6 +4,7 @@ import { supabaseFetcherSingle } from "@/lib/api/supabase";
 import {GetPlayer, GetPlayerMeta, GetPlayers, PlayerMeta} from "../../player/get/page";
 import { MRoom, MRoomSchema, RoomGetPayload } from "@/lib/models/Room";
 import { MPlayer } from "@/lib/models/Player";
+import {getUTCDate} from "@/lib/utils";
 
 export default async function GetRoom() {
 
@@ -74,9 +75,10 @@ export async function GetFullRoom() {
         };
     }
 
-    const fullRoom: (MRoom & { players: PlayerMeta[] | null }) = {
+    const fullRoom: (MRoom & { players: PlayerMeta[] | null, currentTime: number }) = {
         ...data,
-        players: resultPlayers?.players
+        players: resultPlayers?.players,
+        currentTime: getUTCDate().getTime()
     };
 
     return {

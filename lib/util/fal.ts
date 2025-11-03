@@ -1,6 +1,6 @@
 import { ApiError, fal, QueueStatus } from "@fal-ai/client";
 
-const endpoint = "fal-ai/recraft/v3/text-to-image";
+const endpoint = "fal-ai/imagen4/preview/fast";
 
 export function configure(apiKey: string) {
     fal.config({

@@ -5,33 +5,56 @@ import supabase from "@/lib/api/supabase/supabase";
 import {ROUND_TIMESPAN} from "@/lib/models/Round";
 import {getUTCDate} from "@/lib/utils";
 
-export default async function RoundRoom(roomCode: string) {
+export default async function RoundRoom(roomId: string) {
     const userId = await getUserIdFromCookie();
 
     if (!userId)
         return {
             success: false,
             message: "Forbidden",
-            isDone: false
+            isDone: false,
+            isEarly: false
         };
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")
         .select("round_ends_at,current_round,round_count,id")
-        .eq("short_code", roomCode).single();
+        .eq("id", roomId).single();
 
     if (errorFetch){
         return {
             success: false,
             message: "Error while fetching room: " + errorFetch.message,
-            isDone: false
+            isDone: false,
+            isEarly: false
         };
     }
 
-    if (!dataFetch || dataFetch.current_round == null || dataFetch.round_ends_at > getUTCDate()) {
+    if (!dataFetch || dataFetch.current_round == null) {
         return {
             success: false,
             message: "Invalid room.",
-            isDone: false
+            isDone: false,
+            isEarly: false
+        };
+    }
+
+    console.log(dataFetch.round_ends_at > getUTCDate());
+    if (dataFetch.round_ends_at > getUTCDate()){
+
+        return {
+            success: false,
+            message: "OK",
+            isDone: false,
+            isEarly: true
+        };
+    }
+
+    if (dataFetch.current_round === -1){
+        return {
+            success: true,
+            message: "OK",
+            isDone: true,
+            isEarly: false
         };
     }
 
@@ -47,13 +70,15 @@ export default async function RoundRoom(roomCode: string) {
         return {
             success: false,
             message: error.message,
-            isDone: false
+            isDone: false,
+            isEarly: false
         };
     }
 
     return {
         success: true,
         isDone: isDone,
+        isEarly: false,
         message: "OK"
     };
 }

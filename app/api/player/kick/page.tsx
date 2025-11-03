@@ -27,7 +27,7 @@ export default async function KickPlayer(user_id: string) {
 
     const { room } = await GetFullRoom();
 
-    const  kickedUser = room?.players?.find((p) => p.user_id === user_id)
+    const  kickedUser = room?.players?.find((p) => p.users.id === user_id)
 
     if (player?.player_number === 1 && kickedUser) {
 

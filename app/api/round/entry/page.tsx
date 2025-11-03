@@ -14,7 +14,7 @@ export default async function EntryRound(entry: Omit<MRoundEntry, "round_id" | "
         };
 
     const { error: errorFetch, data: dataFetch } = await supabase.from("rooms")
-        .select<"current_round", number>()
+        .select("current_round")
         .eq("id", entry.room_id).single();
 
     if (errorFetch){
@@ -31,8 +31,10 @@ export default async function EntryRound(entry: Omit<MRoundEntry, "round_id" | "
         };
     }
 
+    const current_round: number = dataFetch.current_round;
+
     const entryToAdd = { ...entry,
-        round_id: dataFetch,
+        round_id: current_round,
         author_id: userId,
         room_id: entry.room_id,
     };

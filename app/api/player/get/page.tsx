@@ -66,7 +66,6 @@ export async function GetPlayerMeta(room: Pick<MRoom, 'id'>){
         .select("player_number, users ( id, username )")
         .eq("room_id", room.id);
 
-    console.log(data);
     //const { error, data } = await supabaseFetcher("players", PlayerMetaPayloadSchema, playersGetPayload);
 
     return {

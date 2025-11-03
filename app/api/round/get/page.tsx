@@ -36,20 +36,19 @@ async function pullNextEntry(playerNumber: number, room: MRoom){
 
     return {
         success: true,
-        entry: dataEntry
+        entry: dataEntry.image as string | null
     };
 }
 
 function getEntry(roomId: string, roundNum: number, num: number){
     return supabase.from("round_entries")
-        .select<"data", string | null>()
+        .select("image, players!inner(player_number)")
         .eq("players.player_number", num)
-        .eq("round_number", roundNum)
-        .eq("room_id", roomId)
-        .eq("is_prompt", false).single();
+        .eq("round_id", roundNum)
+        .eq("room_id", roomId).single();
 }
 
-export default async function GetRound(roomCode: string){
+export default async function GetRound(roomId: string){
     const userId = await getUserIdFromCookie();
 
     if (!userId)
@@ -60,7 +59,7 @@ export default async function GetRound(roomCode: string){
         };
 
     const { data: dataRoom, error: errorRoomFetch } = await supabase.from("rooms")
-        .select<"*", MRoom>().eq("short_code", roomCode).single();
+        .select<"*", MRoom>().eq("id", roomId).maybeSingle();
 
     if (errorRoomFetch){
         return {
@@ -86,9 +85,9 @@ export default async function GetRound(roomCode: string){
         };
     }
 
-    const { data: playerNumber, error: errorPlayerFetch } = await supabase
+    const { data: playerData, error: errorPlayerFetch } = await supabase
         .from("players")
-        .select<"player_number", number | null>()
+        .select("player_number")
         .eq("user_id", userId)
         .eq("room_id", dataRoom.id).single();
 
@@ -99,6 +98,8 @@ export default async function GetRound(roomCode: string){
             roundInfo: null
         };
     }
+
+    const playerNumber = playerData?.player_number as number | null;
 
     if (!playerNumber || playerNumber <= 0){
         return {
@@ -115,7 +116,7 @@ export default async function GetRound(roomCode: string){
         message: entryPullSuccess ? "OK" : "Error while pulling the next entry: " + entryPullError,
         roundInfo: entryPullSuccess ? {
             roundNumber: dataRoom.current_round,
-            images: entry
+            image: entry
         } : null
     };
 }
