@@ -5,7 +5,6 @@ import { GetPlayer, GetPlayers } from "../../player/get/page";
 import { MRoom, MRoomSchema, RoomGetPayload } from "@/lib/models/Room";
 import { MPlayer } from "@/lib/models/Player";
 
-
 export default async function GetRoom() {
 
     const { success, message, player } = await GetPlayer()
@@ -20,7 +19,10 @@ export default async function GetRoom() {
         return {
             success: data != null,
             message: data ? "OK" : error?.message || "Unknown error",
-            room: data ? data : null
+            room: data ? {
+                ...data,
+                round_remaining: data.round_ends_at == null ? null : (data.round_ends_at.getTime() - Date.now())/1000,
+            } : null
         }
     }
 

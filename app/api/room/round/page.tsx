@@ -26,7 +26,7 @@ export default async function RoundRoom(roomCode: string) {
         };
     }
 
-    if (!dataFetch || dataFetch.round_ends_at > new Date()) {
+    if (!dataFetch || dataFetch.current_round == null || dataFetch.round_ends_at > new Date()) {
         return {
             success: false,
             message: "Invalid room.",

@@ -10,7 +10,7 @@ import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {MRoom} from "@/lib/models/Room";
-import {GetFullRoom} from "@/app/api/room/get/page";
+import GetRoom, {GetFullRoom} from "@/app/api/room/get/page";
 import {GetPlayerMeta, PlayerMeta} from "@/app/api/player/get/page";
 import EntryRound from "@/app/api/round/entry/page";
 import {configure, generateImage} from "@/lib/util/fal";
@@ -66,7 +66,7 @@ async function roundRoom(roomCode: string){
 }
 
 export default function GameRoomPage({ params }: RoomPageProps) {
-    const [room, setRoom] = useState<MRoom | null>();
+    const [room, setRoom] = useState<(MRoom & { round_remaining: number | null }) | null>();
     const [players, setPlayers] = useState<PlayerMeta[] | null>();
     const [remaining, setRemaining] = useState<number>(0);
     const [gameState, setGameState] = useState<GameState>("WAITING");
@@ -112,7 +112,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
         GetUserID().then(setUserId);
 
-        GetFullRoom().then(x => {
+        GetRoom().then(x => {
             if (!x.success){
                 console.error("Room fetch failed: ", x.message);
                 return;
@@ -142,6 +142,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
             if (r >= 0)
                 setRemaining(r);
+            else if (remaining != 0)
+                setRemaining(0);
         }, 1000);
 
         return () => window.clearInterval(timer);
@@ -149,8 +151,11 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
     useEffect(() => {
         const timer = window.setInterval(async () => {
+            console.log("wide interval tick");
             if (room == null)
                 return;
+
+            console.log("wide interval room accepted");
 
             const players = await fetchPlayers(room.id);
             setPlayers(players);
@@ -159,8 +164,8 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                 setGameState("WAITING");
             }
 
-            if (room.creator_id === userId && remaining <= 0){
-                //await roundRoom(room.short_code);
+            if (room.creator_id === userId && remaining <= 0 && room.current_round != null){
+                await roundRoom(room.short_code);
             }
 
             if (remaining <= 0 && submitted){
