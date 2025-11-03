@@ -12,7 +12,7 @@ import { GameHeader } from "@/components/GameHeader"
 import { PlayerCard } from "@/components/shared/PlayerCard"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import GetRoom, {GetFullRoom} from "@/app/api/room/get/page";
+import GetRoom, { GetFullRoom } from "@/app/api/room/get/page";
 import { GetPlayerMeta, PlayerMeta } from "@/app/api/player/get/page";
 import EntryRound from "@/app/api/round/entry/page";
 import GetUserID from "@/app/api/user/get/page";
@@ -161,7 +161,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         }
     }
 
-    async function reloadRoom(){
+    async function reloadRoom() {
         const room = await fetchRoom();
         setRoom(room);
         setPlayers(room?.players);
@@ -179,10 +179,10 @@ export default function GameRoomPage({ params }: RoomPageProps) {
         if (room.current_round != null) {
             setGameState("GUESSING");
         }
-        else if (room.current_round == -1){
+        else if (room.current_round == -1) {
             setGameState("RESULTS")
         }
-        else{
+        else {
             setGameState("WAITING")
         }
 
@@ -209,7 +209,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
 
             if (r >= 0)
                 setRemaining(r);
-            else{
+            else {
                 setRemaining(0);
 
                 if (r < 0)
@@ -235,7 +235,7 @@ export default function GameRoomPage({ params }: RoomPageProps) {
                     return;
                 hereRoom = r;
             }
-            else{
+            else {
                 const players = await fetchPlayers(hereRoom.id);
                 setPlayers(players);
             }
